@@ -120,10 +120,10 @@
       '</div>';
   }
 
-  // Quiet strip right under the hero — just logos, no label.
+  // Quiet strip right under the hero.
   function renderSponsorBanner() {
     if (!Array.isArray(C.sponsors) || !C.sponsors.length) return '';
-    return '<div class="sponsors sponsors-hero">' + sponsorRow() + '</div>';
+    return '<div class="sponsors sponsors-hero"><div class="sponsors-label">Thank you to our sponsors</div>' + sponsorRow() + '</div>';
   }
 
   // Fuller "thank you" section, labelled, near the footer.

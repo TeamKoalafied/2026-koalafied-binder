@@ -692,10 +692,7 @@ a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .sponsor-logo {
   height: 26px; max-width: 104px;
   width: auto; object-fit: contain;
-  filter: grayscale(1) opacity(.7);
-  transition: filter .15s;
 }
-.sponsor-logo:hover { filter: none; }
 
 .sponsors-hero {
   border-top: none; padding: 32px 0 0; margin-top: 8px;
