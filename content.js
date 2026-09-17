@@ -156,6 +156,7 @@ window.BINDER_CONTENT = {
       features: [
         { text: "Linear Intake: hopper slides out with intake to expand space to store balls" },
         { text: "Modular design: intake is replaceable seperate from gearboxes" },
+        { text: "Prior design used a 'slapdown' intake style. This enabled better positioning of the motor, but limited ball capacity and had less flexibility in collisions." },
       ],
       media: [
         { type: "highlight", views: [
@@ -180,7 +181,9 @@ window.BINDER_CONTENT = {
       title: "Spindexer & Kicker",
       thesis: "A rotating hopper that holds and singulates balls into the shooter",
       features: [
-        { text: "15t to 40t, running a **2.67 : 1** reduction" }
+        { text: "15t to 40t, running a **2.67 : 1** reduction" },
+        { text: "Balls are moved into the kicker with a spinning platform. Allows balls to fall into the spindexer more easily" },
+        { text: "Old version used a large central wheel to push balls into the kicker (see prototyping pics)" }
       ],
       media: [
         { type: "highlight", views: [
@@ -204,10 +207,10 @@ window.BINDER_CONTENT = {
       title: "Shooter",
       thesis: "A variable hood shooter, with a camera for targeting, to shoot the fuel into the hub.",
       features: [
-        { text: "Complex packaging for the small diameter of the turret" },
-        { text: "2x motors to reduce recovery time" },
-        { text: "JE motor for the hood — small, with a built-in 22.2:1 reduction" },
-        { text: "Arducam mounted directly to the shooter for accuracy." }
+        { text: "2 brushless Kraken x60 motors to reduce time between shots" },
+        { text: "Variable angle hood allows shots to be made from anywhere on the field." },
+        { text: "JE motor for the hood: small, with a large built-in 22.2:1 reduction. Enables the small turret footprint." },
+        { text: "Targeting camera is mounted directly to the shooter, giving shots greater accuracy" }
       ],
       media: [
         { type: "highlight", views: [
@@ -229,11 +232,11 @@ window.BINDER_CONTENT = {
       title: "Turret",
       thesis: "Allows targeting of the hub while on the move, anywhere on the field",
       features: [
-        { text: ">360 degrees range of motion", children: [
-          "Limit switch module has a sliding hard stop"
-        ]},
         { text: "Modular custom gearbox design with a 54:1 reduction" },
-        { text: "COTS 'lazy susan' bearing with a 3DP rack attached" },
+        { text: "COTS 'lazy susan' bearing with a 3DP rack attached to drive the rotation" },
+        { text: "Custom energy chain solution with spring tensioner to allow reliable >360 ROM" },
+        { text: "Limit switch module is replaceable with only three screws" },
+        { text: "Limit switch module has a sliding hard stop, enabling a >360 ROM with accurate software control" },
       ],
       media: [
         { type: "highlight", views: [
@@ -258,9 +261,9 @@ window.BINDER_CONTENT = {
         { text: "Compact design to allow room for the turret and energy chain"},
         { text: "Braking stage in the gearbox", children: [
           "Past designs used servo or pneumatically actuated brakes",
-          "New anti-rollback mechanism– no software control needed"
+          "Anti-rollback braking stage removes need for software control, and ensures the climber stays down when the robot is disabled."
         ]},
-        { text: "Bottom locking jaw on the climber prevents slipping." }
+        { text: "Bottom locking jaw on the climber was added to prevent the robot slipping off the rung." }
       ],
       media: [
         { type: "highlight", views: [
