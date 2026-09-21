@@ -12,6 +12,8 @@ The site works by opening `index.html` directly (`file://`), which is a hard req
 
 `scripts/remove-bg.py input.png [output.webp]` strips flat white backgrounds from CAD screenshots (needs Pillow + numpy).
 
+`scripts/make-og.sh` regenerates `assets/img/og-cover.png` (the link-preview card) by screenshotting `scripts/og-card.html` in headless Chrome at 1200×630. That card reads `content.js`, so it follows the robot name, tagline, accent and hero render automatically — re-run the script and commit the PNG after changing any of them. Keep the output PNG/JPEG, never WebP: some link previewers won't load WebP.
+
 ## Architecture
 
 - **`content.js`** holds all content as `window.BINDER_CONTENT = {...}`: `team`, `hero` (image + callouts), `categories`, `sponsors`, `sections`. It's a script, not a `.json` fetched at runtime, so the site works without a server. Never switch to `fetch()`/ES modules for this reason.
@@ -25,6 +27,8 @@ The site works by opening `index.html` directly (`file://`), which is a hard req
 - **Section layout:** the first media block renders beside the feature list; the rest go full width below (`renderSection`).
 - **Hero:** callout `x`/`y` are percentages over the hero image; `layoutHero()` redraws SVG leader lines from DOM positions on load/resize. Callout `id` must match a section `id`. Optional `hl` images crossfade on hover/focus.
 - **Sections** with `print: false` are excluded from print.html.
+- **Head metadata is hand-kept, and deliberately duplicated.** Title, description, Open Graph tags and the `schema.org` JSON-LD block live literally in `index.html` and `print.html`, *not* in `content.js`, because search and preview crawlers read the files without running scripts. Same reason for the `<noscript>` block in each `<body>`, which mirrors the section list by hand. Renaming the robot or rolling the season means editing all of these — `README.md` has the checklist. `print.html` is `noindex` with its canonical pointed at `/`, since it is the same words as the web version.
+- **Absolute URLs** in the meta tags and JSON-LD are hardcoded to `https://2026.teamkoalafied.com/` (matching `CNAME`) — crawlers can't resolve a relative `og:image`. A domain change touches `CNAME`, both HTML heads, `robots.txt` and `sitemap.xml`.
 - **Theming:** design tokens are CSS custom properties in `:root` of `assets/css/binder.css`; `--accent` is overridden at runtime from `team.accent`. Honor the existing `prefers-reduced-motion` handling when adding transitions.
 
 ## Image conventions

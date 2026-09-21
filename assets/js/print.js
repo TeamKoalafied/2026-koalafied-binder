@@ -66,7 +66,7 @@
 
   function boot() {
     var t = C.team, h = C.hero;
-    document.title = t.number + ' ' + t.name + ' — ' + t.season + ' Technical Binder (print)';
+    document.title = 'FRC ' + t.number + ' ' + t.name + ' — ' + t.season + ' Technical Binder (print)';
     var root = document.documentElement;
     if (t.accent) root.style.setProperty('--accent', t.accent);
 

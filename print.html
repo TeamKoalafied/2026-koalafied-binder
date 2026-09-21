@@ -1,12 +1,47 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Technical Binder — print</title>
+
+<!--
+   █   █  ███   ███  █      ███  █████ █████ █████ ████
+   █  █  █   █ █   █ █     █   █ █       █   █     █   █
+   ███   █   █ █████ █     █████ ████    █   ████  █   █
+   █  █  █   █ █   █ █     █   █ █       █   █     █   █
+   █   █  ███  █   █ █████ █   █ █     █████ █████ ████
+
+   FRC 6996 · Koalafied · 2026 Technical Binder (print)
+
+   teamkoalafied.com
+-->
+
+<title>FRC 6996 Koalafied — 2026 Technical Binder (print)</title>
+<meta name="description" content="Printable A4 edition of the 2026 technical binder for LEMON LAUNCHER, the robot built by FRC team 6996 Koalafied.">
+<!-- Same words as index.html, so canonical points there and this page
+     stays out of the index. -->
+<link rel="canonical" href="https://2026.teamkoalafied.com/">
+<meta name="robots" content="noindex, follow">
+
+<!-- Kept in step with index.html so a pasted print link still previews. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FRC 6996 Koalafied">
+<meta property="og:locale" content="en_AU">
+<meta property="og:url" content="https://2026.teamkoalafied.com/print.html">
+<meta property="og:title" content="FRC 6996 Koalafied — 2026 Technical Binder (print)">
+<meta property="og:description" content="The whole LEMON LAUNCHER binder laid out as A4 sheets: intake, spindexer, shooter, turret and climber, ready to print or save as a PDF.">
+<meta property="og:image" content="https://2026.teamkoalafied.com/assets/img/og-cover.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LEMON LAUNCHER — the 2026 robot of FRC team 6996 Koalafied, shown as a CAD render.">
+<meta name="twitter:card" content="summary_large_image">
+
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#fafaf8">
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
 <link rel="alternate icon" href="assets/img/favicon.png">
+<link rel="apple-touch-icon" href="assets/img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,600;0,800;1,800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -20,7 +55,33 @@
     <a href="index.html">← Web version</a>
     <button id="print-btn" type="button">Print / Save as PDF</button>
   </div>
-  <div class="sheet-stack" id="stack"></div>
+  <div class="sheet-stack" id="stack">
+    <!-- No sheets without JS. Same fallback as index.html. -->
+    <noscript>
+      <div class="sheet"><div class="noscript">
+        <p class="eyebrow">Team 6996 · Koalafied · 2026</p>
+        <h1>LEMON LAUNCHER</h1>
+        <p>Full-width slap-down intake feeding a spindexer hopper, into a
+           360° turreted shooter. And an L1 climb.</p>
+        <p>This page builds its sheets in the browser, so there is nothing
+           to print with JavaScript turned off. Turn it on for the full
+           write-up of:</p>
+        <ul>
+          <li>Reveal Video</li>
+          <li>Block Model</li>
+          <li>Intake</li>
+          <li>Spindexer &amp; Kicker</li>
+          <li>Shooter</li>
+          <li>Turret</li>
+          <li>Climber</li>
+        </ul>
+        <p>Read it on the <a href="index.html">web version</a>, view the cad on
+           <a href="https://cad.onshape.com/documents/f777e2d9e964fbf60835e3da/w/235a7544344677d127d5777e/e/62d9f4aee1b8ab6f94113ccb">Onshape</a>,
+           or our website at
+           <a href="https://teamkoalafied.com">teamkoalafied.com</a>.</p>
+      </div></div>
+    </noscript>
+  </div>
 
   <script src="content.js"></script>
   <script src="assets/js/print.js"></script>

@@ -801,7 +801,7 @@ a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .foot a { color: var(--ink-3); }
 .foot a:hover { color: var(--accent); }
 
-/* ---- 11. Error banner ------------------------------------ */
+/* ---- 11. Error banner & no-JS fallback ------------------- */
 
 .boom {
   margin: 40px auto; max-width: 640px; padding: 20px 24px;
@@ -809,6 +809,22 @@ a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
   background: var(--panel); font-family: var(--font-mono); font-size: 13px;
 }
 .boom h2 { font-family: var(--font-mono); font-size: 13px; margin-bottom: 8px; color: var(--warn); }
+
+/* The <noscript> fallback in index.html and print.html. It also carries
+   .wrap, which centres it and adds the gutter. */
+.noscript { max-width: 60ch; padding-block: clamp(48px, 9vw, 96px) 72px; }
+.noscript h1 {
+  font-size: clamp(2.2rem, 7vw, 3.6rem); font-weight: 800; font-style: italic;
+  letter-spacing: -0.045em; word-spacing: 0.3em; line-height: 0.9;
+  margin: 12px 0 22px;
+}
+.noscript p { color: var(--ink-2); margin-bottom: 14px; }
+.noscript ul {
+  margin: 0 0 20px; padding-left: 18px; list-style: disc;
+  color: var(--ink-2);
+}
+.noscript li { margin-bottom: 3px; }
+.noscript a { color: var(--accent); text-underline-offset: 2px; }
 
 /* ---- 12. Print ------------------------------------------- */
 

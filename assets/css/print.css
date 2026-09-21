@@ -36,6 +36,9 @@ body { background: #8b8b8b; }
   display: flex; flex-direction: column;
 }
 
+/* The no-JS fallback sits in a .sheet, which supplies the margin already. */
+.sheet .noscript { padding-block: 0; }
+
 /* Cover */
 .cover { text-align: center; }
 

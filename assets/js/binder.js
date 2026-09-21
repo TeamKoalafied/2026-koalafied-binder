@@ -886,6 +886,28 @@
     document.querySelectorAll('.sec').forEach(function (s) { io.observe(s); });
   }
 
+  /* ---- console easter egg -------------------------------- */
+
+  // Same wordmark as index.html's source comment.
+  function greet(t) {
+    if (!window.console || !console.log) return;
+
+    var mark = [
+      '█   █  ███   ███  █      ███  █████ █████ █████ ████',
+      '█  █  █   █ █   █ █     █   █ █       █   █     █   █',
+      '███   █   █ █████ █     █████ ████    █   ████  █   █',
+      '█  █  █   █ █   █ █     █   █ █       █   █     █   █',
+      '█   █  ███  █   █ █████ █   █ █     █████ █████ ████'
+    ];
+
+    console.log(
+      '%c' + mark.join('\n') + '\n\n' +
+      'FRC ' + t.number + ' · ' + t.name + ' · ' + t.season + ' · ' + t.robot +
+      '\n' + (t.website || ''),
+      'font-family:monospace;line-height:1.35;color:' + (t.accent || '#0a7770')
+    );
+  }
+
   /* ---- boot ---------------------------------------------- */
 
   function boot() {
@@ -894,7 +916,8 @@
     }
 
     var t = C.team;
-    document.title = t.number + ' — ' + t.season + ' Technical Binder';
+    greet(t);
+    document.title = 'FRC ' + t.number + ' ' + t.name + ' — ' + t.season + ' Technical Binder';
     var root = document.documentElement;
     if (t.accent) root.style.setProperty('--accent', t.accent);
 
