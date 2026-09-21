@@ -26,10 +26,71 @@
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
 
+  // True when a carousel's items carry more than one distinct tag, i.e. when
+  // the tags actually distinguish something rather than repeating one label.
+  function mixedTags(items) {
+    var seen = [];
+    items.forEach(function (it) {
+      if (it.tag && seen.indexOf(it.tag) < 0) seen.push(it.tag);
+    });
+    return seen.length > 1;
+  }
+
   function el(html) {
     var t = document.createElement('template');
     t.innerHTML = html.trim();
     return t.content.firstElementChild;
+  }
+
+  /* ---- sliding tab indicators ----------------------------
+     Both tab strips on the page — the nav's category links and a Main
+     View's pill rail — mark the current item with one element that
+     slides, instead of styling the item itself. `moveIndicator` writes
+     the active item's box into CSS vars on the strip; the indicator is
+     absolutely positioned against the strip, so offsetLeft/offsetTop are
+     already relative to it and stay correct when the rail is scrolled.
+
+     Every strip registers itself so `syncStrips` can re-measure after a
+     resize or a late webfont swap, either of which changes tab widths. */
+
+  var STRIPS = [];
+
+  function registerStrip(strip, getActive) {
+    STRIPS.push([strip, getActive]);
+  }
+
+  function moveIndicator(strip, active) {
+    if (!strip) return;
+    if (!active) { strip.classList.remove('has-active'); return; }
+    // A hidden strip (the nav below 940px) measures zero — leave the last
+    // known box in place and wait for the resize that reveals it.
+    if (!active.offsetWidth) return;
+    strip.style.setProperty('--indicator-x', active.offsetLeft + 'px');
+    strip.style.setProperty('--indicator-y', active.offsetTop + 'px');
+    strip.style.setProperty('--indicator-w', active.offsetWidth + 'px');
+    strip.style.setProperty('--indicator-h', active.offsetHeight + 'px');
+    strip.classList.add('has-active');
+  }
+
+  function syncStrips() {
+    STRIPS.forEach(function (s) { moveIndicator(s[0], s[1]()); });
+    // A rail that fits has nothing to pan, so it can claim touch gestures
+    // for scrubbing; one that overflows must stay scrollable. A solo rail
+    // has nothing to scrub either, so it never takes the gesture.
+    document.querySelectorAll('.hl-pills:not(.is-solo)').forEach(function (rail) {
+      rail.style.touchAction = rail.scrollWidth > rail.clientWidth ? '' : 'none';
+    });
+  }
+
+  // Bring the selected tab into view on a rail too narrow to show them all.
+  function keepInView(strip, tab) {
+    if (strip.scrollWidth <= strip.clientWidth) return;
+    var left = tab.offsetLeft;
+    var right = left + tab.offsetWidth;
+    if (left < strip.scrollLeft) strip.scrollLeft = left - 4;
+    else if (right > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollLeft = right - strip.clientWidth + 4;
+    }
   }
 
   function fail(msg) {
@@ -66,7 +127,7 @@
             '<span class="wordmark-b">' + esc(t.name) + '</span>' +
             '<span class="wordmark-tag"><b>' + esc(t.season) + '</b> Binder</span>' +
           '</a>' +
-          '<nav class="nav-links">' + links + '</nav>' +
+          '<nav class="nav-links"><span class="nav-indicator" aria-hidden="true"></span>' + links + '</nav>' +
           '<div class="nav-tools">' +
             (t.website ? '<a class="icon-btn" href="' + esc(t.website) + '" target="_blank" rel="noopener" ' +
               'aria-label="Main team site (opens in a new tab)" title="Main team site (opens in a new tab)">' +
@@ -335,7 +396,10 @@
       return '<div class="media-block">' + blockLabel(b) +
         '<figure class="hl" data-hl="' + key + '">' +
           '<div class="hl-stage" role="tabpanel" aria-labelledby="' + key + '-t0">' + frames + '</div>' +
-          '<div class="hl-pills" role="tablist" aria-label="' + esc(b.label || 'Views') + '">' + pills + '</div>' +
+          '<div class="hl-pills' + (b.views.length < 2 ? ' is-solo' : '') +
+               '" role="tablist" aria-label="' + esc(b.label || 'Views') + '">' +
+            '<span class="pill-indicator" aria-hidden="true"></span>' + pills +
+          '</div>' +
           (b.caption ? '<figcaption>' + esc(b.caption) + '</figcaption>' : '') +
         '</figure>' +
       '</div>';
@@ -364,10 +428,15 @@
 
     if (b.type === 'carousel') {
       var multi = b.items.length > 1;
+      // A tag only earns its line when it tells two kinds of photo apart. If
+      // every item carries the same one it just restates the block's label
+      // above, so it is dropped (see mixedTags, shared with print.js).
+      var showTags = mixedTags(b.items);
       var items = b.items.map(function (it) {
+        var cap = (showTags && it.tag ? '<b>' + esc(it.tag) + '</b>' : '') + fmt(it.caption || '');
         return '<div class="carousel-item">' +
           '<div class="carousel-frame"><img src="' + esc(it.src) + '" alt="' + esc(it.alt) + '" loading="lazy"></div>' +
-          '<p class="carousel-cap">' + (it.tag ? '<b>' + esc(it.tag) + '</b>' : '') + fmt(it.caption || '') + '</p>' +
+          (cap ? '<p class="carousel-cap">' + cap + '</p>' : '') +
         '</div>';
       }).join('');
       var arrow = function (dir, label) {
@@ -507,7 +576,10 @@
 
       var stage = fig.querySelector('.hl-stage');
       var frames = fig.querySelectorAll('.hl-stage img');
+      var rail = fig.querySelector('.hl-pills');
       var pills = [].slice.call(fig.querySelectorAll('.pill'));
+      var current = 0;
+      var dragging = false;
 
       // Match the stage to the tallest view so switching never shifts the page.
       var ar = 0;
@@ -522,6 +594,7 @@
       });
 
       function show(i, focus) {
+        current = i;
         frames.forEach(function (f, j) { f.classList.toggle('is-on', j === i); });
         pills.forEach(function (p, j) {
           p.setAttribute('aria-selected', String(j === i));
@@ -529,6 +602,76 @@
           if (j === i && focus) p.focus();
         });
         stage.setAttribute('aria-labelledby', key + '-t' + i);
+        if (!dragging) keepInView(rail, pills[i]);
+        moveIndicator(rail, pills[i]);
+      }
+
+      registerStrip(rail, function () { return pills[current]; });
+      wireRailDrag();
+
+      /* Press and drag along the rail to scrub through the views, the way
+         a segmented control behaves — the indicator follows the cursor and
+         the render crossfades live, so comparing two subsystems is one
+         gesture instead of two clicks. The views are still tabs, not a
+         range: this only borrows a slider's feel, not its semantics.
+
+         Touch is the awkward case. A rail wider than its container has to
+         stay scrollable, so there we leave the browser's pan alone and let
+         taps do the work; syncStrips keeps touch-action in step with
+         whether the rail currently overflows. */
+      function wireRailDrag() {
+        if (pills.length < 2) return;
+
+        // Hit-test in the rail's own content coordinates: offsetLeft is fixed
+        // regardless of scroll, so one rect per move covers every pill.
+        function indexAt(clientX) {
+          var box = rail.getBoundingClientRect();
+          var x = clientX - box.left - rail.clientLeft + rail.scrollLeft;
+          for (var i = 0; i < pills.length; i++) {
+            if (x >= pills[i].offsetLeft && x <= pills[i].offsetLeft + pills[i].offsetWidth) return i;
+          }
+          // Past either end, hold the nearest view rather than losing track.
+          return x < pills[0].offsetLeft ? 0 : pills.length - 1;
+        }
+
+        // Suppressing selectstart for the duration of the gesture, rather than
+        // preventDefault-ing pointerdown, keeps the browser's native focus
+        // behaviour intact — including not raising a focus ring on a click.
+        function blockSelect(ev) { ev.preventDefault(); }
+
+        function end(e) {
+          if (!dragging) return;
+          dragging = false;
+          rail.classList.remove('is-dragging');
+          fig.classList.remove('is-dragging');
+          if (e && e.pointerId != null && rail.hasPointerCapture(e.pointerId)) {
+            rail.releasePointerCapture(e.pointerId);
+          }
+          document.removeEventListener('selectstart', blockSelect);
+          keepInView(rail, pills[current]);
+          // A drag can land on a tab other than the one the pointer went down
+          // on, which is where the browser left focus — move it, or the arrow
+          // keys would step from the wrong place.
+          pills[current].focus({ preventScroll: true });
+        }
+
+        rail.addEventListener('pointerdown', function (e) {
+          if (e.button) return;
+          if (e.pointerType === 'touch' && rail.scrollWidth > rail.clientWidth) return;
+          // Without this, dragging off the rail starts selecting the page
+          // text underneath and the gesture ends holding a blue smear.
+          document.addEventListener('selectstart', blockSelect);
+          dragging = true;
+          rail.classList.add('is-dragging');
+          fig.classList.add('is-dragging');
+          rail.setPointerCapture(e.pointerId);
+          show(indexAt(e.clientX));
+        });
+        rail.addEventListener('pointermove', function (e) {
+          if (dragging) show(indexAt(e.clientX));
+        });
+        rail.addEventListener('pointerup', end);
+        rail.addEventListener('pointercancel', end);
       }
 
       pills.forEach(function (p, i) {
@@ -593,11 +736,34 @@
   // arrows page the strip sideways rather than swap a single image, and
   // each item's own frame is a fixed height (not aspect-matched) so mixed
   // portrait/landscape photos sit flush in a row.
+  /* Lay a carousel photo to the row height at its own aspect ratio, so the
+     strip keeps a single clean baseline without cropping anything.
+
+     In a multi-photo strip the ratio is clamped, so one panorama can't run
+     away with the row and a tall shot can't collapse to a sliver — those two
+     are the only ones centre-cropped. A lone photo has no row to keep in
+     step with, so it is always shown whole. */
+  function setRatio(img, single) {
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    var r = img.naturalWidth / img.naturalHeight;
+    if (!single) r = Math.min(2, Math.max(0.62, r));
+    img.parentNode.style.setProperty('--ar', r.toFixed(4));
+  }
+
   function wireCarousels(root) {
     root.querySelectorAll('[data-carousel]').forEach(function (fig) {
       var track = fig.querySelector('.carousel-track');
       var prev = fig.querySelector('.carousel-prev');
       var next = fig.querySelector('.carousel-next');
+
+      // Every photo needs its ratio, including the single-item carousels
+      // that fall out below before any paging is wired.
+      var single = fig.classList.contains('is-single');
+      fig.querySelectorAll('img').forEach(function (img) {
+        if (img.complete) setRatio(img, single);
+        else img.addEventListener('load', function () { setRatio(img, single); });
+      });
+
       if (!prev || !next) return; // single item — nothing to page
 
       function update() {
@@ -700,6 +866,9 @@
   }
 
   function wireScrollSpy(numbered) {
+    var navLinks = document.querySelector('.nav-links');
+    registerStrip(navLinks, function () { return navLinks.querySelector('a.is-active'); });
+
     var catOf = {};
     numbered.forEach(function (s) { catOf[s.id] = s.category; });
 
@@ -711,6 +880,7 @@
       document.querySelectorAll('.nav-links a').forEach(function (a) {
         a.classList.toggle('is-active', !!active && a.getAttribute('data-cat') === catOf[active]);
       });
+      moveIndicator(navLinks, navLinks.querySelector('a.is-active'));
     }, { rootMargin: '-42% 0px -52% 0px' });
 
     document.querySelectorAll('.sec').forEach(function (s) { io.observe(s); });
@@ -755,6 +925,20 @@
     wireCarousels(main);
     wireLightbox(main);
     wireScrollSpy(numbered);
+
+    // Place every tab indicator on its current tab, then enable the slide
+    // transition a frame later so none of them animate in from zero width.
+    // Webfonts land after this and resize the tabs, so re-measure then too.
+    requestAnimationFrame(function () {
+      syncStrips();
+      requestAnimationFrame(function () {
+        document.querySelectorAll('.hl-pills, .nav-links').forEach(function (n) {
+          n.classList.add('is-ready');
+        });
+      });
+    });
+    window.addEventListener('resize', syncStrips);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncStrips);
 
     // Sections are built after the browser has already tried to honour a
     // #hash, so jump to it ourselves once the anchor actually exists.

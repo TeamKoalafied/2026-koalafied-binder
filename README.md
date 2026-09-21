@@ -72,10 +72,16 @@ below for how to make the images for it.
 **2. Carousel** (`carousel`) — Prototyping and Alternate View photos,
 combined into one fixed-height strip. As many items show side by side as
 fit the width; arrows page the strip sideways when there isn't room for all
-of them (and disappear entirely when there's nothing to page). Each item's
-`tag` is optional — use it to mark which images are which when you mix
-different kinds of photo in one carousel (e.g. `"Alternate View"` vs.
-`"Prototyping"`).
+of them (and disappear entirely when there's nothing to page). Photos keep
+their own proportions — they're laid to one shared row height, so a portrait
+and a landscape shot sit in the same clean band without being cropped or
+padded out.
+
+Each item's `tag` is optional — use it to mark which images are which when
+you mix different kinds of photo in one carousel (e.g. `"Alternate View"`
+vs. `"Prototyping"`). **A tag only appears when the carousel holds more than
+one distinct tag.** If every item says `"Prototyping"` it just repeats the
+block's own label, so it's left off — set different tags, or none at all.
 
 ```js
 { type: "carousel", label: "Prototyping", items: [

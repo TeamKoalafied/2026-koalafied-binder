@@ -48,6 +48,13 @@
   --gutter: clamp(20px, 5vw, 72px);
   --nav-h: 58px;
 
+  /* Shared easing for every sliding tab indicator (nav + view rails), so
+     they all move with the same weight. --slide-fast is the same motion
+     while a rail is being dragged, where the indicator should feel stuck
+     to the cursor rather than easing after it. */
+  --slide: .28s cubic-bezier(.16, .84, .24, 1);
+  --slide-fast: .13s cubic-bezier(.2, .9, .3, 1);
+
   color-scheme: light;
 }
 
@@ -133,7 +140,11 @@ code {
 }
 .wordmark-tag b { color: var(--accent-2); font-weight: 500; }
 
-.nav-links { display: flex; gap: 4px; margin-left: auto; }
+/* Category links are a tab bar driven by the scroll spy, so the active
+   marker slides between them (see moveIndicator in binder.js) rather than
+   being drawn inside whichever link is current. Keeping it out of the link
+   also stops the row growing by the underline's height when one activates. */
+.nav-links { position: relative; display: flex; gap: 4px; margin-left: auto; }
 .nav-links a {
   font-size: 13px; text-decoration: none; color: var(--ink-2);
   padding: 6px 11px; border-radius: 4px;
@@ -142,9 +153,20 @@ code {
 }
 .nav-links a:hover { color: var(--ink); background: var(--rule-2); }
 .nav-links a.is-active { color: var(--ink); }
-.nav-links a.is-active::after {
-  content: ""; display: block; height: 1.5px; background: var(--accent);
-  margin-top: 3px; border-radius: 2px;
+
+.nav-indicator {
+  position: absolute; left: 0; bottom: 2px;
+  width: var(--indicator-w, 0px); height: 1.5px;
+  background: var(--accent); border-radius: 2px;
+  transform: translateX(var(--indicator-x, 0px));
+  opacity: 0; pointer-events: none;
+}
+.nav-links.has-active .nav-indicator { opacity: 1; }
+.nav-links.is-ready .nav-indicator {
+  transition: transform var(--slide), width var(--slide), opacity .2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-links.is-ready .nav-indicator { transition: opacity .2s ease; }
 }
 
 .nav-tools { display: flex; align-items: center; gap: 6px; flex: none; }
@@ -519,21 +541,75 @@ figcaption {
 .hl-stage img.is-on:hover { opacity: .92; }
 @media (prefers-reduced-motion: reduce) { .hl-stage img { transition: none; } }
 
+/* The views sit on one connected rail rather than as separate buttons:
+   a single indicator slides between them, so switching views reads as
+   one control moving instead of two buttons swapping state. The pills
+   themselves are transparent — wireHighlights measures the selected one
+   and writes its box into the --indicator-* vars below. */
 .hl-pills {
-  display: flex; flex-wrap: wrap; gap: 6px;
+  --indicator-x: 4px;
+  --indicator-y: 4px;
+  --indicator-w: 0px;
+  --indicator-h: 0px;
+  position: relative;
+  display: inline-flex; gap: 2px;
+  max-width: 100%;
   margin-top: 12px;
+  padding: 4px;
+  background: var(--rule-2);
+  border: 1px solid var(--rule);
+  border-radius: 100px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Dragging across the rail must not start a text selection. */
+  -webkit-user-select: none; user-select: none;
 }
+.hl-pills::-webkit-scrollbar { display: none; }
+/* One view is not a choice — drop the rail and leave the lone label. */
+.hl-pills.is-solo { padding: 0; background: none; border-color: transparent; }
+
+.pill-indicator {
+  position: absolute; left: 0; top: 0;
+  width: var(--indicator-w); height: var(--indicator-h);
+  background: var(--accent); border-radius: 100px;
+  transform: translate(var(--indicator-x), var(--indicator-y)) scale(var(--press, 1));
+  pointer-events: none;
+}
+/* Animate only after the first measurement lands, otherwise the
+   indicator slides in from a zero-width box on load. */
+.hl-pills.is-ready .pill-indicator {
+  transition: transform var(--slide), width var(--slide), height var(--slide);
+}
+/* Held down: the indicator squeezes under the press and tracks the cursor
+   on the fast curve. Releasing drops both classes, so it springs back to
+   full size on the slower curve. */
+.hl-pills.is-dragging { --press: .95; }
+.hl-pills.is-ready.is-dragging .pill-indicator {
+  transition: transform var(--slide-fast), width var(--slide-fast), height var(--slide-fast);
+}
+/* Scrubbing past several views in one gesture would otherwise leave a pile
+   of half-faded frames behind the cursor. */
+.hl.is-dragging .hl-stage img { transition-duration: .13s; }
+
 .pill {
+  position: relative; z-index: 1; flex: none;
   font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase;
   padding: 7px 13px; cursor: pointer;
-  background: var(--panel); color: var(--ink-2);
-  border: 1px solid var(--rule); border-radius: 100px;
-  transition: color .15s, border-color .15s, background .15s;
+  background: none; color: var(--ink-2);
+  border: 0; border-radius: 100px;
+  transition: color .15s;
 }
-.pill:hover { color: var(--ink); border-color: var(--ink-3); }
-.pill[aria-selected="true"] {
-  background: var(--accent); border-color: var(--accent); color: #fff;
+.pill:hover { color: var(--ink); }
+.pill[aria-selected="true"] { color: #fff; }
+/* The rail clips its own overflow, so keep the focus ring inside the pill. */
+.pill:focus-visible { outline-offset: -2px; }
+.pill[aria-selected="true"]:focus-visible { outline-color: var(--paper); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-pills.is-ready .pill-indicator,
+  .hl-pills.is-ready.is-dragging .pill-indicator { transition: none; }
+  .hl-pills.is-dragging { --press: 1; }
 }
 
 /* ---- 8d. Carousel (Prototyping + Alternate Views) --------- */
@@ -542,32 +618,46 @@ figcaption {
    the strip sideways. Each item's frame is a FIXED height, not matched to
    that image's aspect ratio, so mixed portrait/landscape photos sit flush
    in a row instead of resizing the row around whichever one is showing. */
-.carousel { position: relative; }
+/* Prototyping photos arrive at whatever ratio the camera or screenshot gave
+   them — this set runs from a 0.55 portrait to a 2.49 panorama. Sizing them
+   all to one box and letterboxing the remainder left each photo a different
+   size floating in its own dead space. Instead every photo is laid to one
+   shared row height and keeps its natural width, the way a justified photo
+   strip works: the row reads as one clean band and nothing is cropped. */
+.carousel { position: relative; --row-h: clamp(190px, 20vw, 260px); }
 
 .carousel-track {
-  display: flex; gap: 14px;
+  display: flex; gap: 14px; align-items: flex-start;
   overflow-x: auto; scroll-snap-type: x mandatory;
   scroll-padding-left: 2px;
   scrollbar-width: none;
 }
 .carousel-track::-webkit-scrollbar { display: none; }
-.carousel.is-single .carousel-track { overflow-x: visible; }
+/* A lone photo isn't a strip, so it doesn't scroll — and left-aligning one
+   tall shot under a full-width rule strands it against a field of white.
+   Centring reads as a figure instead. */
+.carousel.is-single .carousel-track { overflow-x: visible; justify-content: center; }
 
-.carousel-item {
-  flex: 0 0 clamp(200px, 27vw, 300px); scroll-snap-align: start;
-  min-width: 0;
-}
-.carousel.is-single .carousel-item { flex-basis: min(100%, 420px); }
+/* A lone photo has the whole row to itself, so let it read as a figure
+   rather than a thumbnail stranded at the left edge. */
+.carousel.is-single { --row-h: clamp(240px, 30vw, 380px); }
 
+.carousel-item { flex: 0 0 auto; scroll-snap-align: start; max-width: 100%; }
+
+/* Width comes from the row height and the photo's own ratio. It has to be a
+   real --ar rather than `width: auto`, or the frame measures zero before the
+   image loads and a lazy image inside a zero-width box never loads at all.
+   4/3 is only the placeholder until wireCarousels reads the real ratio. */
 .carousel-frame {
-  height: clamp(190px, 20vw, 260px);
-  background: none; border: none; border-radius: 3px;
-  display: grid; place-items: center; overflow: hidden;
+  height: var(--row-h); aspect-ratio: var(--ar, 4 / 3);
+  background: none; border: none; border-radius: 3px; overflow: hidden;
 }
 .carousel-frame img {
-  width: 100%; height: 100%; object-fit: contain; padding: 6%;
+  width: 100%; height: 100%; object-fit: cover; object-position: center;
   cursor: zoom-in; transition: opacity .15s ease;
 }
+/* A single photo isn't in a scroller, so it must not push the page wide. */
+.carousel.is-single .carousel-frame { max-width: 100%; }
 .carousel-frame img:hover { opacity: .88; }
 
 .carousel-cap { margin-top: 9px; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
@@ -579,7 +669,7 @@ figcaption {
 }
 
 .carousel-nav {
-  position: absolute; top: calc(clamp(190px, 20vw, 260px) / 2); z-index: 2;
+  position: absolute; top: calc(var(--row-h) / 2); z-index: 2;
   transform: translateY(-50%);
   width: 36px; height: 36px; border-radius: 50%;
   background: color-mix(in srgb, var(--panel) 88%, transparent);

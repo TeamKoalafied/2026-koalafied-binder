@@ -36,8 +36,13 @@
           out.push({ src: v.src, alt: v.alt, caption: v.tag + ' — ' + v.note });
         });
       } else if (b.type === 'carousel') {
+        var seen = [];
         b.items.forEach(function (it) {
-          out.push({ src: it.src, alt: it.alt, caption: it.tag ? it.tag + ' — ' + (it.caption || '') : it.caption });
+          if (it.tag && seen.indexOf(it.tag) < 0) seen.push(it.tag);
+        });
+        var showTags = seen.length > 1;
+        b.items.forEach(function (it) {
+          out.push({ src: it.src, alt: it.alt, caption: showTags && it.tag ? it.tag + ' — ' + (it.caption || '') : it.caption });
         });
       }
     });
