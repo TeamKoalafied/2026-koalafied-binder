@@ -1,0 +1,6 @@
+#crawl everything!!
+
+User-agent: *
+Allow: /
+
+Sitemap: https://2026.teamkoalafied.com/sitemap.xml
