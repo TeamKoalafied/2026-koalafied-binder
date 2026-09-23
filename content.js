@@ -26,7 +26,18 @@ window.BINDER_CONTENT = {
     robot: "LEMON LAUNCHER",
     tagline: "Full-width slap-down intake feeding a spindexer hopper, into a 360° turreted shooter. And an L1 climb.",
     accent: "#0a7770",
+    // Swaps one letter of `robot` for a picture, on the hero and the print
+    // cover — here, the O in LEMON becomes a lemon slice. `at` picks which
+    // occurrence when the letter appears more than once. Delete this line and
+    // the name renders as plain text.
+    robotGlyph: { letter: "O", at: 1, src: "assets/img/lemon-half.svg" },
     logo: "assets/img/logo.svg",
+    // Optional split of `logo` for the nav mark: the sprocket ring on its own
+    // and everything else. When both are set the nav stacks them and turns the
+    // ring with the page scroll. Regenerate with scripts/split-logo.py; drop
+    // either one and the nav falls back to the single `logo` above.
+    logoGear: "assets/img/logo-gear.svg",
+    logoCore: "assets/img/logo-core.svg",
     website: "https://teamkoalafied.com",
     cad: "https://cad.onshape.com/documents/f777e2d9e964fbf60835e3da/w/235a7544344677d127d5777e/e/62d9f4aee1b8ab6f94113ccb"
   },

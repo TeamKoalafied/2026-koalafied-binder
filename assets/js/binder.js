@@ -108,6 +108,40 @@
       '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>';
   }
 
+  // Two stacked layers when team.logoGear/logoCore are set, so wireGear can
+  // turn the ring under the static koala; one flat <img> otherwise. The gear
+  // goes first — the banners live in the core and have to stay on top of it.
+  function markHTML(t) {
+    if (t.logoGear && t.logoCore) {
+      return '<span class="wordmark-mark is-split" aria-hidden="true">' +
+        '<img class="mark-gear" src="' + esc(t.logoGear) + '" alt="">' +
+        '<img class="mark-core" src="' + esc(t.logoCore) + '" alt="">' +
+      '</span>';
+    }
+    return t.logo ? '<img class="wordmark-mark" src="' + esc(t.logo) + '" alt="">' : '';
+  }
+
+  // The robot name with one letter swapped for a picture, per team.robotGlyph.
+  // The letter stays in the DOM, visually hidden, so the heading still reads
+  // and copies as the real name — print.js has the same function.
+  function robotHTML(t) {
+    var g = t.robotGlyph;
+    var name = String(t.robot == null ? '' : t.robot);
+    if (!g || !g.src || !g.letter) return esc(name);
+
+    var i = -1;
+    for (var n = 0; n < (g.at || 1); n++) {
+      i = name.indexOf(g.letter, i + 1);
+      if (i < 0) return esc(name);   // letter isn't in the name — leave it be
+    }
+    return esc(name.slice(0, i)) +
+      '<span class="robot-glyph">' +
+        '<img src="' + esc(g.src) + '" alt="">' +
+        '<span class="vis-hidden">' + esc(g.letter) + '</span>' +
+      '</span>' +
+      esc(name.slice(i + g.letter.length));
+  }
+
   function renderNav(numbered) {
     var t = C.team;
     var links = C.categories.map(function (cat) {
@@ -115,17 +149,22 @@
       if (!first) return '';
       return '<a href="#' + esc(first.id) + '" data-cat="' + esc(cat.id) + '">' + esc(cat.label) + '</a>';
     }).join('') +
-      (t.cad ? '<a class="nav-external" href="' + esc(t.cad) + '" target="_blank" rel="noopener" aria-label="CAD (opens in a new tab)" title="CAD (opens in a new tab)">' +
+      (t.cad ? '<a class="nav-external" href="' + esc(t.cad) + '" target="_blank" rel="noopener" aria-label="Onshape CAD (opens in a new tab)" title="Onshape CAD (opens in a new tab)">' +
         'Onshape' + externalLinkIcon() + '</a>' : '');
 
     var nav = el(
       '<header class="nav">' +
         '<div class="nav-in wrap">' +
+          // Number, name and season stack beside the mark instead of running
+          // along one line behind a divider — same information, one lockup.
           '<a class="wordmark" href="#top">' +
-            (t.logo ? '<img class="wordmark-mark" src="' + esc(t.logo) + '" alt="">' : '') +
-            '<span class="wordmark-a">' + esc(t.number) + '</span>' +
-            '<span class="wordmark-b">' + esc(t.name) + '</span>' +
-            '<span class="wordmark-tag"><b>' + esc(t.season) + '</b> Binder</span>' +
+            markHTML(t) +
+            '<span class="wordmark-text">' +
+              '<span class="wordmark-name">' +
+                '<span class="wordmark-num">' + esc(t.number) + '</span> ' + esc(t.name) +
+              '</span>' +
+              '<span class="wordmark-tag">' + esc(t.season) + ' Binder</span>' +
+            '</span>' +
           '</a>' +
           '<nav class="nav-links"><span class="nav-indicator" aria-hidden="true"></span>' + links + '</nav>' +
           '<div class="nav-tools">' +
@@ -138,33 +177,83 @@
               '<path d="M6 9V2.5h12V9M6 17.5H4a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 4 9.5h16a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-2"/>' +
               '<path d="M6 14h12v7.5H6z"/></svg></a>' +
             '<button class="icon-btn nav-menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Contents — jump to a section" title="Contents">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>' +
+              '<svg class="i-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>' +
+              '<svg class="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>' +
             '</button>' +
           '</div>' +
         '</div>' +
       '</header>');
 
+    // --i is the row's place in the list, which the CSS turns into a
+    // transition-delay so the sheet fades up in reading order.
+    var order = 0;
     var groups = C.categories.map(function (cat) {
-      var rows = numbered.filter(function (s) { return s.category === cat.id; })
-        .map(function (s) {
-          return '<a href="#' + esc(s.id) + '"><span>' + pad(s.n) + '</span><span>' + esc(s.title) + '</span></a>';
+      var rows = numbered.filter(function (s) { return s.category === cat.id; });
+      if (!rows.length) return '';
+      return '<div class="menu-group" style="--i:' + (order++) + '">' + esc(cat.label) + '</div>' +
+        rows.map(function (s) {
+          return '<a style="--i:' + (order++) + '" href="#' + esc(s.id) + '">' +
+            '<span>' + pad(s.n) + '</span><span>' + esc(s.title) + '</span></a>';
         }).join('');
-      return rows ? '<div class="menu-group">' + esc(cat.label) + '</div>' + rows : '';
     }).join('');
 
-    var panel = el('<div class="menu-panel" id="menu-panel" hidden>' + groups + '</div>');
+    var extra =
+      '<a href="print.html">Print version' + '</a>' +
+      (t.website ? '<a href="' + esc(t.website) + '" target="_blank" rel="noopener">' +
+        'Team site' + externalLinkIcon() + '</a>' : '') +
+      (t.cad ? '<a href="' + esc(t.cad) + '" target="_blank" rel="noopener">' +
+        'Onshape CAD' + externalLinkIcon() + '</a>' : '');
+
+    var panel = el('<div class="menu-panel" id="menu-panel" hidden>' +
+      (t.logoGear ? '<img class="menu-deco" src="' + esc(t.logoGear) + '" alt="" aria-hidden="true">' : '') +
+      '<div class="menu-scroll"><div class="menu-sheet">' + groups +
+        '<div class="menu-extra" style="--i:' + order + '">' + extra + '</div>' +
+      '</div></div>' +
+    '</div>');
 
     document.body.insertBefore(panel, document.body.firstChild);
     document.body.insertBefore(nav, document.body.firstChild);
 
     var mb = document.getElementById('menu-btn');
+    var scroll = panel.querySelector('.menu-scroll');
+
+    function openMenu() {
+      panel.hidden = false;
+      scroll.scrollTop = 0;
+      requestAnimationFrame(function () { panel.classList.add('is-open'); });
+      document.documentElement.style.overflow = 'hidden';
+      mb.setAttribute('aria-expanded', 'true');
+      // Focus stays on the button, which is now the close button: the panel
+      // follows the nav in DOM order, so Tab walks straight into the list,
+      // and nothing picks up a focus ring just for opening the menu.
+    }
+
+    function closeMenu() {
+      if (panel.hidden) return;
+      panel.classList.remove('is-open');
+      document.documentElement.style.overflow = '';
+      mb.setAttribute('aria-expanded', 'false');
+      // Rows transition too and their events bubble, so only the panel's own
+      // fade is allowed to end the close.
+      var done = function (e) {
+        if (e && e.target !== panel) return;
+        panel.hidden = true;
+        panel.removeEventListener('transitionend', done);
+      };
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
+      else panel.addEventListener('transitionend', done);
+    }
+
     mb.addEventListener('click', function () {
-      var open = panel.hidden;
-      panel.hidden = !open;
-      mb.setAttribute('aria-expanded', String(open));
+      if (panel.hidden) openMenu(); else { closeMenu(); mb.focus(); }
     });
     panel.addEventListener('click', function (e) {
-      if (e.target.closest('a')) { panel.hidden = true; mb.setAttribute('aria-expanded', 'false'); }
+      // Anywhere that isn't a link is backdrop, and closes.
+      if (e.target.closest('a')) closeMenu();
+      else if (!e.target.closest('.menu-sheet')) { closeMenu(); mb.focus(); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { closeMenu(); mb.focus(); }
     });
   }
 
@@ -230,7 +319,7 @@
       '<div class="wrap">' +
         '<div class="hero-meta">' +
           '<p class="eyebrow">Team ' + esc(t.number) + ' · ' + esc(t.name) + ' · ' + esc(t.season) + '</p>' +
-          '<h1 class="hero-title">' + esc(t.robot) + '</h1>' +
+          '<h1 class="hero-title">' + robotHTML(t) + '</h1>' +
           '<p class="hero-sub">' + fmt(t.tagline) + '</p>' +
         '</div>' +
         '<div class="hero-stage">' +
@@ -865,6 +954,48 @@
     });
   }
 
+  /* ---- nav mark gear ------------------------------------- */
+
+  // One scroll handler for both things the header does with scroll position.
+  //
+  // is-stuck: the bar is transparent over the top of the page and only takes
+  // on its blur and hairline once anything has scrolled under it. This is not
+  // gated on reduced motion — it is a state change, not an animation.
+  //
+  // The gear turns with the page: top of the document is 0deg, bottom is TURNS
+  // full rotations. Driving it off absolute scroll position rather than a delta
+  // keeps it honest — jump back to the top and the gear is back where it
+  // started, so the angle always reads as "how far down am I".
+  function wireNavScroll() {
+    var nav = document.querySelector('.nav');
+    var gear = document.querySelector('.mark-gear');
+    var spin = !!gear && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!nav && !spin) return;
+
+    var TURNS = 2;
+    var queued = false;
+
+    function paint() {
+      queued = false;
+      var y = window.pageYOffset;
+      if (nav) nav.classList.toggle('is-stuck', y > 8);
+      if (!spin) return;
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      var p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+      gear.style.transform = 'rotate(' + (p * TURNS * 360).toFixed(2) + 'deg)';
+    }
+
+    window.addEventListener('scroll', function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(paint);
+    }, { passive: true });
+
+    window.addEventListener('resize', paint);
+    paint();
+  }
+
   function wireScrollSpy(numbered) {
     var navLinks = document.querySelector('.nav-links');
     registerStrip(navLinks, function () { return navLinks.querySelector('a.is-active'); });
@@ -948,6 +1079,7 @@
     wireCarousels(main);
     wireLightbox(main);
     wireScrollSpy(numbered);
+    wireNavScroll();
 
     // Place every tab indicator on its current tab, then enable the slide
     // transition a frame later so none of them animate in from zero width.

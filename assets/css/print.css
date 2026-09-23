@@ -61,7 +61,13 @@ body { background: #8b8b8b; }
   align-items: center; justify-content: center;
 }
 .cover-body .kicker { font-family: var(--font-mono); font-size: 10pt; letter-spacing: .3em; text-transform: uppercase; color: #666; }
-.cover-body h1 { font-size: 40pt; font-weight: 800; font-style: italic; letter-spacing: -.03em; margin: 6mm 0 4mm; }
+/* word-spacing for the same reason as .hero-title: the negative letter-spacing
+   is applied to the space too, so the gap between words has to be bought back. */
+.cover-body h1 {
+  font-size: 40pt; font-weight: 800; font-style: italic;
+  letter-spacing: -.03em; word-spacing: .26em;
+  margin: 6mm 0 4mm;
+}
 .cover-body .sub { font-size: 12pt; color: #333; max-width: 120mm; }
 .cover-body .rule { width: 40mm; height: 2px; background: var(--accent); margin: 8mm 0; }
 

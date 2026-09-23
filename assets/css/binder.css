@@ -46,7 +46,10 @@
 
   --measure: 68ch;
   --gutter: clamp(20px, 5vw, 72px);
-  --nav-h: 58px;
+  /* The mark leads the wordmark, so the bar is sized from it rather than the
+     other way round — keep --nav-h comfortably above --mark. */
+  --mark: 48px;
+  --nav-h: 74px;
 
   /* Shared easing for every sliding tab indicator (nav + view rails), so
      they all move with the same weight. --slide-fast is the same motion
@@ -116,96 +119,235 @@ code {
 
 /* ---- 3. Navigation --------------------------------------- */
 
+/* The bar rides transparent over the top of the page and only earns its
+   surface once something has scrolled under it (wireNavScroll adds is-stuck
+   past 8px). The blur is withheld until then on purpose: a backdrop-filter
+   with nothing behind it still blurs the top edge of the hero. */
 .nav {
   position: sticky; top: 0; z-index: 100;
   height: var(--nav-h);
-  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background .28s ease, border-color .28s ease;
+}
+.nav.is-stuck {
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
   backdrop-filter: saturate(180%) blur(14px);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
-  border-bottom: 1px solid var(--rule);
+  border-bottom-color: var(--rule);
 }
+@media (prefers-reduced-motion: reduce) { .nav { transition: none; } }
 .nav-in { height: 100%; display: flex; align-items: center; gap: 24px; }
 
 .wordmark {
-  display: flex; align-items: baseline; gap: 10px;
+  display: flex; align-items: center; gap: 12px;
   text-decoration: none; flex: none;
 }
-.wordmark-mark { width: 26px; height: 26px; align-self: center; flex: none; }
-.wordmark-a { font-family: var(--font-display); font-weight: 400; font-size: 17px; letter-spacing: 0.06em; }
-.wordmark-b { font-family: var(--font-display); font-weight: 800; font-size: 17px; letter-spacing: 0.02em; }
-.wordmark-tag {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em;
-  text-transform: uppercase; color: var(--ink-3);
-  padding-left: 10px; border-left: 1px solid var(--rule);
+.wordmark-mark { width: var(--mark); height: var(--mark); align-self: center; flex: none; }
+
+/* Split mark: the sprocket ring is its own layer so wireGear can turn it with
+   the page scroll while the koala and the 6996/FRC banners stay upright. Both
+   files share one square viewBox centred on the ring's axis, so they stack by
+   inset:0 and the ring spins true about 50% 50% with no wobble. Stacking order
+   is load-bearing — the banners sit on top of the ring in the artwork. */
+.wordmark-mark.is-split { position: relative; display: block; }
+.wordmark-mark.is-split img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mark-gear { transform-origin: 50% 50%; will-change: transform; }
+/* wireGear never writes a transform here, so drop the compositing layer too. */
+@media (prefers-reduced-motion: reduce) { .mark-gear { will-change: auto; } }
+/* Two lines beside the mark: number + name, season under it. Stacking is what
+   lets all three read without the divider the single-line version needed, and
+   it fills the mark's height instead of leaving it floating next to one word. */
+.wordmark-text { display: flex; flex-direction: column; gap: 3px; line-height: 1; }
+.wordmark-name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 19px; letter-spacing: -0.015em; color: var(--ink);
 }
-.wordmark-tag b { color: var(--accent-2); font-weight: 500; }
+/* The name's negative tracking swallows the plain space after the number, so
+   the gap is set here rather than left to the markup. */
+.wordmark-num { font-weight: 400; color: var(--ink-2); letter-spacing: .02em; margin-right: .16em; }
+.wordmark-tag {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-3);
+}
 
 /* Category links are a tab bar driven by the scroll spy, so the active
    marker slides between them (see moveIndicator in binder.js) rather than
    being drawn inside whichever link is current. Keeping it out of the link
    also stops the row growing by the underline's height when one activates. */
-.nav-links { position: relative; display: flex; gap: 4px; margin-left: auto; }
+.nav-links { position: relative; display: flex; gap: 2px; margin-left: auto; }
 .nav-links a {
-  font-size: 13px; text-decoration: none; color: var(--ink-2);
-  padding: 6px 11px; border-radius: 4px;
-  transition: color .15s, background .15s;
+  position: relative; z-index: 1;
+  font-size: 14px; font-weight: 500; text-decoration: none; color: var(--ink-2);
+  padding: 8px 15px; border-radius: 999px;
+  transition: color .15s;
   white-space: nowrap;
 }
-.nav-links a:hover { color: var(--ink); background: var(--rule-2); }
-.nav-links a.is-active { color: var(--ink); }
+.nav-links a:hover { color: var(--ink); }
+.nav-links a.is-active { color: var(--accent); }
 
+/* A filled pill that slides between the links, rather than an underline —
+   it uses all four boxes moveIndicator writes, not just x/width. */
 .nav-indicator {
-  position: absolute; left: 0; bottom: 2px;
-  width: var(--indicator-w, 0px); height: 1.5px;
-  background: var(--accent); border-radius: 2px;
-  transform: translateX(var(--indicator-x, 0px));
+  position: absolute; left: 0; top: 0;
+  width: var(--indicator-w, 0px); height: var(--indicator-h, 0px);
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  border-radius: 999px;
+  transform: translate(var(--indicator-x, 0px), var(--indicator-y, 0px));
   opacity: 0; pointer-events: none;
 }
 .nav-links.has-active .nav-indicator { opacity: 1; }
 .nav-links.is-ready .nav-indicator {
-  transition: transform var(--slide), width var(--slide), opacity .2s ease;
+  transition: transform var(--slide), width var(--slide), height var(--slide), opacity .2s ease;
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-links.is-ready .nav-indicator { transition: opacity .2s ease; }
 }
 
-.nav-tools { display: flex; align-items: center; gap: 6px; flex: none; }
+.nav-tools { display: flex; align-items: center; gap: 6px; flex: none; margin-left: 14px; }
 .icon-btn {
-  width: 32px; height: 32px; display: grid; place-items: center;
-  background: none; border: 1px solid transparent; border-radius: 5px;
+  width: 38px; height: 38px; display: grid; place-items: center;
+  background: none; border: 0; border-radius: 999px;
   cursor: pointer; color: var(--ink-2);
+  transition: background .15s ease, color .15s ease;
 }
-.icon-btn:hover { border-color: var(--rule); color: var(--ink); }
-.icon-btn svg { width: 15px; height: 15px; }
+.icon-btn:hover { background: var(--rule-2); color: var(--ink); }
+.icon-btn svg { width: 18px; height: 18px; }
 
-/* Contents button: opens the full section list (menu-panel). Shown at every
-   width — on wide screens it sits alongside the category links, on narrow
-   ones it's the only way to jump to a section since nav-links hides. */
-
-/* External links (team website, CAD): styled like the Reveal/Mechanical
-   category links they sit next to, not like the icon buttons — the small
-   arrow is enough to show they leave the site, so no underline. */
+/* Onshape sits with the category links rather than in the icon row: it is a
+   named destination, so it reads as a word. The arrow is enough to show it
+   leaves the site, so no underline — and it is excluded from the sliding pill
+   because it is not a section the scroll spy can ever mark active. */
 .nav-links a.nav-external {
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex; align-items: center; gap: 5px; color: var(--ink-3);
 }
+.nav-links a.nav-external:hover { color: var(--ink); }
 .nav-links a.nav-external svg { width: 12px; height: 12px; flex: none; }
 
+/* Contents button: carries both icons and swaps on aria-expanded, so the open
+   state has a close button without the overlay needing one of its own. */
+.nav-menu-btn .i-close { display: none; }
+.nav-menu-btn[aria-expanded="true"] .i-bars { display: none; }
+.nav-menu-btn[aria-expanded="true"] .i-close { display: block; }
+.nav-menu-btn[aria-expanded="true"] { background: var(--rule-2); color: var(--ink); }
+
 @media (max-width: 940px) {
+  /* .nav-links carries the auto margin that pushes the right-hand side over,
+     so the button has to take it over once the links are gone. */
   .nav-links { display: none; }
-  .wordmark-tag { display: none; }
+  .nav-tools { margin-left: auto; }
 }
 
-/* Slide-down section menu (mobile) */
-.menu-panel {
-  position: fixed; inset: var(--nav-h) 0 auto 0; z-index: 99;
-  background: var(--panel); border-bottom: 1px solid var(--rule);
-  max-height: calc(100vh - var(--nav-h)); overflow-y: auto;
-  padding: 12px var(--gutter) 24px;
+/* A 48px mark plus a 74px bar is a lot of a short screen to spend on the
+   header, so both come down once the links have already gone. */
+@media (max-width: 600px) {
+  :root { --mark: 40px; --nav-h: 64px; }
+  .wordmark-name { font-size: 17px; }
+  .wordmark-tag { font-size: 9px; letter-spacing: .14em; }
+  .wordmark { gap: 10px; }
 }
+
+/* Full-screen contents overlay. It sits *under* the nav (z-index 99 vs 100)
+   on purpose: the wordmark and the menu button stay exactly where they were,
+   so the button can become the close button without anything moving. The
+   panel itself never scrolls — .menu-scroll does — which keeps .menu-deco
+   parked against the viewport instead of riding the list up. */
+.menu-panel {
+  position: fixed; inset: 0; z-index: 99; overflow: hidden;
+  background: color-mix(in srgb, var(--paper) 93%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  opacity: 0; transition: opacity .22s ease;
+  pointer-events: none;   /* same reason as .lightbox — release clicks on the
+                             first frame of closing, not when [hidden] lands */
+}
+.menu-panel.is-open { opacity: 1; pointer-events: auto; }
 .menu-panel[hidden] { display: none !important; }
-.menu-group { font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin: 16px 0 6px; }
-.menu-panel a { display: flex; gap: 12px; padding: 9px 0; text-decoration: none; border-bottom: 1px solid var(--rule-2); font-size: 15px; }
-.menu-panel a span:first-child { font-family: var(--font-mono); color: var(--accent); font-size: 12px; padding-top: 3px; }
+
+.menu-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* Same box as .wrap, so the list's left edge lands under the wordmark rather
+   than floating in its own centred column. */
+.menu-sheet {
+  position: relative; z-index: 1;
+  max-width: 1240px; margin: 0 auto;
+  padding: calc(var(--nav-h) + clamp(20px, 5vh, 48px)) var(--gutter) clamp(40px, 10vh, 96px);
+}
+
+/* The gear from the nav mark again, oversized and bled off the corner. */
+.menu-deco {
+  position: absolute; z-index: 0; pointer-events: none;
+  width: min(108vw, 780px); height: auto;
+  right: -26%; bottom: -24%;
+  opacity: .07;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .menu-panel.is-open .menu-deco { animation: menu-gear 120s linear infinite; }
+}
+@keyframes menu-gear { to { transform: rotate(360deg); } }
+
+.menu-group {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-3);
+  margin: clamp(24px, 5vh, 44px) 0 4px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--rule);
+}
+.menu-sheet > .menu-group:first-child { margin-top: 0; }
+
+.menu-panel a {
+  display: flex; align-items: baseline; gap: clamp(14px, 3vw, 26px);
+  padding: clamp(11px, 1.9vh, 17px) 0;
+  text-decoration: none; border-bottom: 1px solid var(--rule-2);
+  color: var(--ink);
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(22px, 5.2vw, 34px);
+  letter-spacing: -0.022em; line-height: 1.12;
+  /* No transition here on purpose — a `.menu-panel a` rule outweighs the
+     `.menu-sheet > *` one below and would reset it, dropping the links out
+     of the stagger. Their colour fade lives in that shared rule instead. */
+}
+.menu-panel a span:first-child {
+  flex: none; min-width: 2.4em;
+  font-family: var(--font-mono); font-weight: 500;
+  font-size: clamp(11px, 1.4vw, 13px); color: var(--accent);
+  letter-spacing: .08em;
+}
+.menu-panel a:hover { color: var(--accent); }
+
+/* Print / team site / CAD, moved out of the bar. Deliberately not section
+   rows: smaller, quieter, and set apart by a rule so the numbered list above
+   stays the thing you scan. Needs to outweigh `.menu-panel a`, hence the
+   three-class selector. */
+.menu-extra {
+  display: flex; flex-wrap: wrap; gap: 10px 26px;
+  margin-top: clamp(28px, 6vh, 52px);
+  padding-top: 20px; border-top: 1px solid var(--rule);
+}
+.menu-panel .menu-extra a {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 0; border-bottom: 0;
+  font-family: var(--font-mono); font-weight: 500;
+  font-size: 13px; letter-spacing: .04em;
+  color: var(--ink-2); line-height: 1.4;
+}
+.menu-panel .menu-extra a:hover { color: var(--accent); }
+.menu-extra a svg { width: 13px; height: 13px; flex: none; }
+
+/* Groups and rows fade up in document order. The delay lives on the is-open
+   rule only, so closing pulls the whole list out at once instead of replaying
+   the stagger backwards. */
+.menu-sheet > * {
+  opacity: 0; transform: translateY(14px);
+  transition: opacity .32s ease, transform .32s ease, color .15s ease;
+}
+.menu-panel.is-open .menu-sheet > * {
+  opacity: 1; transform: none;
+  /* Only the fade-up staggers; the third delay keeps link hover instant. */
+  transition-delay: calc(var(--i, 0) * 26ms + 50ms), calc(var(--i, 0) * 26ms + 50ms), 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-panel, .menu-sheet > * { transition: none; }
+  .menu-sheet > * { opacity: 1; transform: none; }
+}
 
 /* ---- 4. Hero --------------------------------------------- */
 
@@ -222,6 +364,37 @@ code {
   margin: 14px 0 0;
   font-style: italic;
 }
+/* A letter of the robot name swapped for a picture (team.robotGlyph).
+   Sized in em so it tracks the title's clamp(), a touch over the cap height
+   because a circle reads small beside flat-topped letters, and skewed to match
+   the italic the rest of the word is set in — an upright circle next to
+   slanted letters reads as a mistake. The hidden letter beside it keeps the
+   heading selectable.
+
+   The skew does not affect layout but does widen the painted box by
+   height x tan(9deg), so where the real O takes 0.715em of advance this spills
+   about 0.15em; the margins buy that back instead of letting the neighbouring
+   letters collide with it. They are uneven because the letters either side are:
+   M ends hard on its advance with almost no right bearing while N carries a
+   generous left one, so equal margins measured out to a 0.019em ink gap on one
+   side and 0.090em on the other. These even the *ink* gaps up, which is what
+   the eye actually reads — and they are tuned to the letters currently beside
+   the glyph, so a different robot name is worth re-checking. */
+.robot-glyph {
+  display: inline-block;
+  width: .78em; height: .78em;
+  vertical-align: -.03em;
+  transform: skewX(-9deg);
+  margin: 0 .055em 0 .125em;
+}
+.robot-glyph img { display: block; width: 100%; height: 100%; }
+
+.vis-hidden {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
 .hero-sub {
   max-width: 46ch; margin: 22px auto 0;
   color: var(--ink-2); font-size: clamp(15px, 1.6vw, 18px);

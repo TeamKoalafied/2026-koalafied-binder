@@ -112,7 +112,21 @@
     'FRC <span>' + t.number + '</span> ' + t.name;
   document.getElementById('eyebrow').textContent =
     t.season + ' Technical Binder';
-  document.getElementById('robot').textContent = t.robot;
+  // Same letter-for-picture swap the hero and the print cover do, so the
+  // preview card shows the robot name the way the site does. Paths are
+  // relative to scripts/, hence the '../'.
+  var g = t.robotGlyph, name = String(t.robot || ''), i = -1;
+  if (g && g.src && g.letter) {
+    for (var n = 0; n < (g.at || 1); n++) {
+      i = name.indexOf(g.letter, i + 1);
+      if (i < 0) break;
+    }
+  }
+  document.getElementById('robot').innerHTML = i < 0
+    ? name
+    : name.slice(0, i) +
+      '<span class="robot-glyph"><img src="../' + g.src + '" alt=""></span>' +
+      name.slice(i + g.letter.length);
   document.getElementById('hero').src = '../' + C.hero.image;
 
   // First sentence of the tagline only — the full one is too long at this size.

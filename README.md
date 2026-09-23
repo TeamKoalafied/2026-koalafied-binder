@@ -2,6 +2,10 @@
 
 Interactive team technical binder inspired by Team 4414, plus a print/PDF version at `print.html`.
 
+**New here?** [GETTING-STARTED.md](GETTING-STARTED.md) covers running it
+locally, the scripts, and publishing. This page is the content guide — what to
+write in `content.js`.
+
 ---
 
 ## Structure
@@ -127,6 +131,71 @@ themselves.
 
 `team.robot` is the huge word on the hero. `team.accent` recolours the whole site.
 
+### Swapping a letter for a picture
+
+`team.robotGlyph` turns one letter of the robot name into an image — this
+season, the **O** in LEMON is a lemon slice:
+
+```js
+robotGlyph: { letter: "O", at: 1, src: "assets/img/lemon-half.svg" },
+```
+
+`at` picks which one when the letter shows up more than once (`at: 2` is the
+second). It applies to the hero, the print cover and the link-preview card, so
+re-run `scripts/make-og.sh` after changing it.
+
+Delete the line and the name goes back to plain text — same if the letter isn't
+in the name, so a new robot next season won't inherit the lemon. The letter is
+still there invisibly, so the heading reads correctly aloud and copies as the
+real name.
+
+Making your own: draw it square, and expect it to be tinted nothing — it's
+shown as-is at roughly the cap height of the title.
+
+### The nav mark
+
+The little logo in the header is stacked from two files so the gear ring can
+turn with the page — scroll to the bottom and it has made two full rotations;
+scroll back up and it unwinds. The koala, the yellow disc and the 6996/FRC
+banners stay upright.
+
+Both files are generated from `logo.svg`, so that stays the one you edit:
+
+```
+python3 scripts/split-logo.py
+```
+
+It writes `logo-gear.svg` (the ring) and `logo-core.svg` (everything else),
+which `team.logoGear` / `team.logoCore` point at. If you re-export the logo and
+the script stops with a "logo.svg changed" error, the paths have moved and the
+`GEAR` list at the top of the script needs re-deriving.
+
+The logo never drew ring behind the two banners, so the ring is really a C with
+two bites out of it. The script fills those in from the opposite side of the
+gear — otherwise the bites rotate into view and the spin looks broken. The
+banners still cover the filled-in part, so the logo at rest is unchanged.
+
+Delete those two lines from `content.js` and the nav quietly falls back to the
+single `logo` image, no gear. The favicon, the print cover and the link-preview
+card all use `logo.svg` either way.
+
+Readers who have asked their system for reduced motion get the mark static.
+
+To resize the mark, change `--mark` near the top of `assets/css/binder.css`
+(and `--nav-h` with it — the bar needs to stay taller than the logo). Phones
+get smaller values from the `max-width: 600px` block lower down.
+
+### The contents menu
+
+The ☰ button opens a full-screen list of every section, at any width. The
+gear from the logo drifts behind it. Escape, the ✕, tapping a section or
+tapping the space beside the list all close it.
+
+The print version, the team site and the Onshape link sit at the bottom of that
+list as well as in the header, which is how they stay reachable on a phone
+where the header's links are hidden. The bar itself stays see-through until you
+scroll, then picks up a blur and a hairline.
+
 ---
 
 ## Highlighting a part of a mechanism
@@ -186,5 +255,7 @@ assets/css/print.css  paper layout
 assets/js/binder.js   renders content.js into the page
 assets/js/print.js    renders content.js into A4 sheets
 assets/img/           images
-assets/img/logo.svg   team logo (vector) — nav mark, favicon and print cover
+assets/img/logo.svg   team logo (vector) — favicon, print cover, link preview
+assets/img/logo-gear.svg  generated: the gear ring the nav mark spins
+assets/img/logo-core.svg  generated: the rest of the mark, stays upright
 ```

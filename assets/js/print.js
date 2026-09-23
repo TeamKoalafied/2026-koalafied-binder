@@ -16,6 +16,27 @@
   }
   function pad(n) { return n < 10 ? '0' + n : String(n); }
 
+  // Same as binder.js's robotHTML — one letter of the robot name swapped for a
+  // picture (team.robotGlyph), with the letter kept visually hidden so the
+  // cover still reads as the real name. Both renderers need it, so both have it.
+  function robotHTML(t) {
+    var g = t.robotGlyph;
+    var name = String(t.robot == null ? '' : t.robot);
+    if (!g || !g.src || !g.letter) return esc(name);
+
+    var i = -1;
+    for (var n = 0; n < (g.at || 1); n++) {
+      i = name.indexOf(g.letter, i + 1);
+      if (i < 0) return esc(name);
+    }
+    return esc(name.slice(0, i)) +
+      '<span class="robot-glyph">' +
+        '<img src="' + esc(g.src) + '" alt="">' +
+        '<span class="vis-hidden">' + esc(g.letter) + '</span>' +
+      '</span>' +
+      esc(name.slice(i + g.letter.length));
+  }
+
   // Every media block flattened to plain figures — no interaction on paper.
   function flatten(section) {
     var out = [];
@@ -116,7 +137,7 @@
       '</div>' +
       '<div class="cover-body">' +
         '<p class="kicker">Team ' + esc(t.number) + ' · ' + esc(t.name) + ' · ' + esc(t.season) + '</p>' +
-        '<h1>' + esc(t.robot) + '</h1>' +
+        '<h1>' + robotHTML(t) + '</h1>' +
         '<div class="rule"></div>' +
         '<p class="sub">' + fmt(t.tagline) + '</p>' +
         heroBlock +
