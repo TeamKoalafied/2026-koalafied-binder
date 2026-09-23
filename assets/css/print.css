@@ -95,8 +95,7 @@ body { background: #8b8b8b; }
 .p-sec h2 { font-size: 26pt; font-weight: 800; letter-spacing: -.03em; margin: 2mm 0 3mm; }
 .p-sec .thesis { font-size: 11pt; color: #333; max-width: 150mm; padding-bottom: 5mm; border-bottom: 1px solid #ddd; }
 
-.p-cols { display: grid; grid-template-columns: 52mm 1fr; gap: 8mm; margin-top: 6mm; }
-.p-cols.solo { grid-template-columns: 1fr; }
+.p-cols { margin-top: 6mm; }
 .p-lab { font-family: var(--font-mono); font-size: 8pt; letter-spacing: .2em; text-transform: uppercase; color: #777; border-bottom: 1px solid #ccc; padding-bottom: 2mm; margin-bottom: 3mm; }
 
 .p-feat > li { position: relative; padding: 1.8mm 0 1.8mm 5mm; font-size: 10pt; border-bottom: 1px solid #f0f0f0; }
@@ -107,11 +106,9 @@ body { background: #8b8b8b; }
 .p-figs { display: grid; gap: 4mm; margin-top: 6mm; }
 .p-figs.c2 { grid-template-columns: 1fr 1fr; }
 .p-figs.c3 { grid-template-columns: 1fr 1fr 1fr; }
-.p-figs .wide { grid-column: 1 / -1; }
 .p-figs figure { margin: 0; }
 .p-figs .box { background: #fff; border: 1px solid #ddd; padding: 2mm; display: grid; place-items: center; }
 .p-figs .box img { max-height: 78mm; width: auto; max-width: 100%; }
-.p-figs .wide .box img { max-height: 100mm; }
 .p-figs figcaption { font-family: var(--font-mono); font-size: 7.5pt; color: #666; margin-top: 1.5mm; }
 
 .p-foot { margin-top: auto; padding-top: 5mm; display: flex; justify-content: space-between;

@@ -60,12 +60,14 @@ with Features** (see Structure above).
 the list. Give it one view and it's a plain picture; give it two or more and
 pill buttons appear to crossfade between them, isolating a sub-system. This
 is the "press a button to highlight a part of a mechanism" feature — see
-below for how to make the images for it.
+below for how to make the images for it. Each view's optional `note` only
+appears in the print version's captions; `alt` is optional and defaults to
+the tag.
 
 ```js
 { type: "highlight", label: "Main View", views: [
-    { tag: "Full Assembly", src: "…", alt: "…" },
-    { tag: "Gearbox",       src: "…", alt: "…" }
+    { tag: "Full Assembly", src: "…", note: "What you're looking at." },
+    { tag: "Gearbox",       src: "…", note: "What this part does." }
 ]}
 ```
 
@@ -183,6 +185,7 @@ print.html            paged A4 version, has a Print / Save as PDF button
 content.js            all content lives here
 assets/css/binder.css site styles and design tokens
 assets/css/print.css  paper layout
+assets/js/common.js   helpers shared by both renderers
 assets/js/binder.js   renders content.js into the page
 assets/js/print.js    renders content.js into A4 sheets
 assets/img/           images

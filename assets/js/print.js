@@ -6,43 +6,30 @@
   'use strict';
 
   var C = window.BINDER_CONTENT;
+  var B = window.Binder, esc = B.esc, fmt = B.fmt, pad = B.pad;
 
-  function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-  function fmt(s) {
-    return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
-  }
-  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  // "Tag — note", or just the tag when there's no note.
+  function tagged(tag, note) { return note ? tag + ' — ' + note : tag; }
 
   // Every media block flattened to plain figures — no interaction on paper.
   function flatten(section) {
     var out = [];
     (section.media || []).forEach(function (b) {
-      if (b.type === 'image') {
-        out.push({ src: b.src, alt: b.alt, caption: b.caption, wide: true });
-      } else if (b.type === 'figures') {
-        b.items.forEach(function (it) { out.push(it); });
-      } else if (b.type === 'compare') {
+      if (b.type === 'compare') {
         out.push({ src: b.before.src, alt: b.before.alt, caption: b.before.tag });
         out.push({ src: b.after.src,  alt: b.after.alt,  caption: b.after.tag });
       } else if (b.type === 'highlight') {
         b.views.forEach(function (v) {
-          out.push({ src: v.src, alt: v.alt, caption: v.note ? v.tag + ' — ' + v.note : v.tag });
+          out.push({ src: v.src, alt: v.alt, caption: tagged(v.tag, v.note) });
         });
       } else if (b.type === 'iterations') {
         b.versions.forEach(function (v) {
-          out.push({ src: v.src, alt: v.alt, caption: v.tag + ' — ' + v.note });
+          out.push({ src: v.src, alt: v.alt, caption: tagged(v.tag, v.note) });
         });
       } else if (b.type === 'carousel') {
-        var seen = [];
+        var showTags = B.mixedTags(b.items);
         b.items.forEach(function (it) {
-          if (it.tag && seen.indexOf(it.tag) < 0) seen.push(it.tag);
-        });
-        var showTags = seen.length > 1;
-        b.items.forEach(function (it) {
-          out.push({ src: it.src, alt: it.alt, caption: showTags && it.tag ? it.tag + ' — ' + (it.caption || '') : it.caption });
+          out.push({ src: it.src, alt: it.alt, caption: showTags && it.tag ? tagged(it.tag, it.caption) : it.caption });
         });
       }
     });
@@ -53,7 +40,7 @@
     if (!items.length) return '';
     var cols = items.length >= 5 ? 3 : 2;
     return '<div class="p-figs c' + cols + '">' + items.map(function (it) {
-      return '<figure class="' + (it.wide ? 'wide' : '') + '">' +
+      return '<figure>' +
         '<div class="box"><img src="' + esc(it.src) + '" alt="' + esc(it.alt) + '"></div>' +
         (it.caption ? '<figcaption>' + esc(it.caption) + '</figcaption>' : '') +
       '</figure>';
@@ -65,14 +52,13 @@
   }
 
   function boot() {
+    if (!B.contentOk(C)) return;
     var t = C.team, h = C.hero;
     document.title = 'FRC ' + t.number + ' ' + t.name + ' — ' + t.season + ' Technical Binder (print)';
     var root = document.documentElement;
     if (t.accent) root.style.setProperty('--accent', t.accent);
 
-    var numbered = C.sections.map(function (s, i) {
-      var c = Object.create(s); c.n = i + 1; return c;
-    });
+    var numbered = B.numbered(C.sections);
 
     // Sections marked `print: false` (e.g. a video with nothing on paper)
     // don't get a sheet and don't appear in the table of contents. Section
@@ -90,7 +76,7 @@
     // Hero image with its callouts as a numbered legend — same labels as
     // the website's hover rail, just laid flat since paper can't hover.
     var heroBlock = '';
-    if (h.image) {
+    if (h && h.image) {
       var dots = (h.callouts || []).map(function (c, i) {
         return '<span class="cover-hero-dot" style="left:' + c.x + '%;top:' + c.y + '%">' + (i + 1) + '</span>';
       }).join('');
@@ -140,12 +126,7 @@
       var cat = C.categories.find(function (c) { return c.id === s.category; });
 
       var feats = (s.features && s.features.length)
-        ? '<div class="p-cols solo"><div><div class="p-lab">Features</div><ul class="p-feat">' +
-            s.features.map(function (f) {
-              var kids = (f.children && f.children.length)
-                ? '<ul>' + f.children.map(function (k) { return '<li>' + fmt(k) + '</li>'; }).join('') + '</ul>' : '';
-              return '<li>' + fmt(f.text) + kids + '</li>';
-            }).join('') + '</ul></div></div>' : '';
+        ? '<div class="p-cols"><div class="p-lab">Features</div>' + B.featureList(s.features, 'p-feat') + '</div>' : '';
 
       pages.push(sheet(
         '<div class="p-sec">' +

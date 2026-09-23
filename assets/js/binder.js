@@ -8,33 +8,9 @@
   'use strict';
 
   var C = window.BINDER_CONTENT;
+  var B = window.Binder, esc = B.esc, fmt = B.fmt, pad = B.pad;
 
   /* ---- helpers ------------------------------------------- */
-
-  function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  // Escape first, then allow **bold** and `code`.
-  function fmt(s) {
-    return esc(s)
-      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>');
-  }
-
-  function pad(n) { return n < 10 ? '0' + n : String(n); }
-
-  // True when a carousel's items carry more than one distinct tag, i.e. when
-  // the tags actually distinguish something rather than repeating one label.
-  function mixedTags(items) {
-    var seen = [];
-    items.forEach(function (it) {
-      if (it.tag && seen.indexOf(it.tag) < 0) seen.push(it.tag);
-    });
-    return seen.length > 1;
-  }
 
   function el(html) {
     var t = document.createElement('template');
@@ -91,14 +67,6 @@
     else if (right > strip.scrollLeft + strip.clientWidth) {
       strip.scrollLeft = right - strip.clientWidth + 4;
     }
-  }
-
-  function fail(msg) {
-    document.body.innerHTML =
-      '<div class="boom"><h2>Binder could not load</h2><p>' + esc(msg) + '</p>' +
-      '<p style="margin-top:10px;color:var(--ink-3)">Check <code>content.js</code> ' +
-      'for a syntax error — a missing comma or bracket will do this. ' +
-      'Open your browser console for the exact line.</p></div>';
   }
 
   /* ---- nav ----------------------------------------------- */
@@ -170,27 +138,15 @@
 
   /* ---- hero ---------------------------------------------- */
 
-  // Two sponsor moments, matching the main site's quiet banner: one right
-  // under the hero (no label), one near the footer (labelled). Both use the
-  // same row markup/logo size — see the comment on .sponsors in binder.css.
-  function sponsorRow() {
-    return '<div class="sponsor-banner-row">' +
-      C.sponsors.map(function (s) {
-        return '<img class="sponsor-logo" src="' + esc(s.logo) + '" alt="' + esc(s.name) + '" loading="lazy">';
-      }).join('') +
-      '</div>';
-  }
-
-  // Quiet strip right under the hero.
-  function renderSponsorBanner() {
-    if (!Array.isArray(C.sponsors) || !C.sponsors.length) return '';
-    return '<div class="sponsors sponsors-hero"><div class="sponsors-label">Thank you to our sponsors</div>' + sponsorRow() + '</div>';
-  }
-
-  // Fuller "thank you" section, labelled, near the footer.
+  // Quiet sponsor strip right under the hero, matching the main site's banner.
   function renderSponsors() {
     if (!Array.isArray(C.sponsors) || !C.sponsors.length) return '';
-    return '<div class="sponsors-label">Thank you to our sponsors</div>' + sponsorRow();
+    return '<div class="sponsors"><div class="sponsors-label">Thank you to our sponsors</div>' +
+      '<div class="sponsor-row">' +
+        C.sponsors.map(function (s) {
+          return '<img class="sponsor-logo" src="' + esc(s.logo) + '" alt="' + esc(s.name) + '" loading="lazy">';
+        }).join('') +
+      '</div></div>';
   }
 
   function renderHero(numbered) {
@@ -218,12 +174,13 @@
     // One frame per system that has an `hl` image, stacked on top of the
     // full-robot frame and crossfaded on hover by that system's rail label
     // (wired in wireHero) — same mechanism as a section's Main View, just
-    // triggered by hover instead of a pill click.
+    // triggered by hover instead of a pill click. Their src waits in
+    // data-src until wireHero knows the screen is wide enough to hover.
     var highlightable = h.callouts.filter(function (c) { return c.hl; });
     var frames = '<img class="hero-frame is-on" data-hero-view="full" src="' + esc(h.image) + '" alt="' + esc(h.alt) + '">' +
       highlightable.map(function (c) {
-        return '<img class="hero-frame" data-hero-view="' + esc(c.id) + '" src="' + esc(c.hl.src) +
-               '" alt="' + esc(c.hl.alt) + '" loading="lazy">';
+        return '<img class="hero-frame" data-hero-view="' + esc(c.id) + '" data-src="' + esc(c.hl.src) +
+               '" alt="' + esc(c.hl.alt) + '">';
       }).join('');
 
     return '<section class="hero" id="top">' +
@@ -239,7 +196,7 @@
           '<div class="hero-figure">' + frames + dots + '</div>' +
           rail('right') +
         '</div>' +
-        renderSponsorBanner() +
+        renderSponsors() +
       '</div>' +
     '</section>';
   }
@@ -303,20 +260,18 @@
       a.addEventListener('blur', function () { set(false); });
     });
 
-    // Size the hero image box to the tallest frame so switching highlights
-    // never shifts the page — same trick every other crossfade block uses.
-    var stage = document.querySelector('.hero-figure');
-    var frames = document.querySelectorAll('.hero-frame');
-    var ar = 0;
-    frames.forEach(function (img) {
-      function take() {
-        if (!img.naturalWidth) return;
-        var r = img.naturalWidth / img.naturalHeight;
-        if (!ar || r < ar) ar = r;
-        stage.style.setProperty('--ar', ar.toFixed(4));
-      }
-      img.complete ? take() : img.addEventListener('load', take);
-    });
+    // The rails (and so the hover) only exist on wide screens — don't make
+    // phones download highlight frames they can never show.
+    var wide = matchMedia('(min-width: 901px)');
+    function loadFrames() {
+      if (!wide.matches) return;
+      heroFrames.forEach(function (f) {
+        var src = f.getAttribute('data-src');
+        if (src) { f.src = src; f.removeAttribute('data-src'); }
+      });
+    }
+    loadFrames();
+    if (wide.addEventListener) wide.addEventListener('change', loadFrames);
 
     var full = document.querySelector('.hero-frame[data-hero-view="full"]');
     if (full && !full.complete) full.addEventListener('load', layoutHero);
@@ -335,13 +290,6 @@
   // key -> the content block that produced it, filled in by mediaBlock().
   var BLOCKS = {};
 
-  function figure(src, alt, caption, cls) {
-    return '<figure class="' + (cls || '') + '">' +
-      '<div class="frame"><img src="' + esc(src) + '" alt="' + esc(alt) + '" loading="lazy"></div>' +
-      (caption ? '<figcaption>' + esc(caption) + '</figcaption>' : '') +
-    '</figure>';
-  }
-
   // Every block type can carry an optional `label` — rendered the same way
   // "Features" is, so "Prototyping", "Alternate View" etc. all look uniform.
   function blockLabel(b) {
@@ -350,21 +298,6 @@
 
   function mediaBlock(b, key) {
     BLOCKS[key] = b;
-
-    if (b.type === 'image') {
-      return '<div class="media-block">' + blockLabel(b) + figure(b.src, b.alt, b.caption) + '</div>';
-    }
-
-    if (b.type === 'figures') {
-      var cols = b.cols || 2;
-      return '<div class="media-block">' + blockLabel(b) +
-        '<div class="figs figs-' + cols + '">' +
-          b.items.map(function (it) {
-            return figure(it.src, it.alt, it.caption, it.wide ? 'wide' : '');
-          }).join('') +
-        '</div>' +
-      '</div>';
-    }
 
     if (b.type === 'compare') {
       return '<div class="media-block">' + blockLabel(b) +
@@ -384,9 +317,10 @@
     }
 
     if (b.type === 'highlight') {
-      var frames = b.views.map(function (v, i) {
+      // No alt falls back to the view's tag.
+      var views = b.views.map(function (v, i) {
         return '<img class="' + (i === 0 ? 'is-on' : '') + '" src="' + esc(v.src) +
-               '" alt="' + esc(v.alt) + '"' + (i ? ' loading="lazy"' : '') + '>';
+               '" alt="' + esc(v.alt || v.tag) + '"' + (i ? ' loading="lazy"' : '') + '>';
       }).join('');
       var pills = b.views.map(function (v, i) {
         return '<button class="pill" type="button" role="tab" id="' + key + '-t' + i + '" ' +
@@ -395,7 +329,7 @@
       }).join('');
       return '<div class="media-block">' + blockLabel(b) +
         '<figure class="hl" data-hl="' + key + '">' +
-          '<div class="hl-stage" role="tabpanel" aria-labelledby="' + key + '-t0">' + frames + '</div>' +
+          '<div class="hl-stage" role="tabpanel" aria-labelledby="' + key + '-t0">' + views + '</div>' +
           '<div class="hl-pills' + (b.views.length < 2 ? ' is-solo' : '') +
                '" role="tablist" aria-label="' + esc(b.label || 'Views') + '">' +
             '<span class="pill-indicator" aria-hidden="true"></span>' + pills +
@@ -421,7 +355,7 @@
             '<button class="step-btn" data-step="1" type="button" aria-label="Next version">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>' +
           '</div>' +
-          '<p class="iter-note"><b>' + esc(b.versions[0].tag) + '</b><span>' + fmt(b.versions[0].note) + '</span></p>' +
+          '<p class="view-note"><b>' + esc(b.versions[0].tag) + '</b><span>' + fmt(b.versions[0].note) + '</span></p>' +
         '</figure>' +
       '</div>';
     }
@@ -431,7 +365,7 @@
       // A tag only earns its line when it tells two kinds of photo apart. If
       // every item carries the same one it just restates the block's label
       // above, so it is dropped (see mixedTags, shared with print.js).
-      var showTags = mixedTags(b.items);
+      var showTags = B.mixedTags(b.items);
       var items = b.items.map(function (it) {
         var cap = (showTags && it.tag ? '<b>' + esc(it.tag) + '</b>' : '') + fmt(it.caption || '');
         return '<div class="carousel-item">' +
@@ -470,15 +404,6 @@
 
   /* ---- sections ------------------------------------------ */
 
-  function featureList(items) {
-    return '<ul class="feat">' + items.map(function (f) {
-      var kids = (f.children && f.children.length)
-        ? '<ul>' + f.children.map(function (k) { return '<li>' + fmt(k) + '</li>'; }).join('') + '</ul>'
-        : '';
-      return '<li>' + fmt(f.text) + kids + '</li>';
-    }).join('') + '</ul>';
-  }
-
   function renderSection(s) {
     var cat = C.categories.find(function (c) { return c.id === s.category; });
     var blocks = s.media || [];
@@ -495,7 +420,7 @@
     }).join('');
 
     var feats = (s.features && s.features.length)
-      ? '<div class="features"><h3 class="block-label">Features</h3>' + featureList(s.features) + '</div>' : '';
+      ? '<div class="features"><h3 class="block-label">Features</h3>' + B.featureList(s.features, 'feat') + '</div>' : '';
 
     // Text comes before the image in the HTML — on narrow screens (and for
     // screen readers, which follow DOM order rather than the CSS below) the
@@ -543,7 +468,6 @@
       function move(clientX) {
         range.value = valueAt(clientX);
         set();
-        range.dispatchEvent(new Event('input', { bubbles: true }));
       }
       range.addEventListener('pointerdown', function (e) {
         dragging = true;
@@ -580,18 +504,6 @@
       var pills = [].slice.call(fig.querySelectorAll('.pill'));
       var current = 0;
       var dragging = false;
-
-      // Match the stage to the tallest view so switching never shifts the page.
-      var ar = 0;
-      frames.forEach(function (img) {
-        function take() {
-          if (!img.naturalWidth) return;
-          var r = img.naturalWidth / img.naturalHeight;
-          if (!ar || r < ar) ar = r;
-          stage.style.setProperty('--ar', ar.toFixed(4));
-        }
-        img.complete ? take() : img.addEventListener('load', take);
-      });
 
       function show(i, focus) {
         current = i;
@@ -691,24 +603,11 @@
       var block = BLOCKS[fig.getAttribute('data-iters')];
       if (!block) return;
 
-      var stage = fig.querySelector('.iters-stage');
       var frames = fig.querySelectorAll('.iter-frame');
       var badge = fig.querySelector('.iter-badge');
       var range = fig.querySelector('.iter-range');
-      var note = fig.querySelector('.iter-note');
+      var note = fig.querySelector('.view-note');
       var btns = fig.querySelectorAll('.step-btn');
-
-      // Size the stage to the tallest frame so nothing jumps between versions.
-      var ar = 0;
-      frames.forEach(function (img) {
-        function take() {
-          if (!img.naturalWidth) return;
-          var r = img.naturalWidth / img.naturalHeight;
-          if (!ar || r < ar) ar = r;          // narrowest ratio = tallest box
-          stage.style.setProperty('--ar', ar.toFixed(4));
-        }
-        img.complete ? take() : img.addEventListener('load', take);
-      });
 
       function show(i) {
         i = Math.max(0, Math.min(block.versions.length - 1, i));
@@ -793,14 +692,14 @@
     });
   }
 
-  // Click any content image to see it enlarged against a dimmed backdrop.
-  // One overlay, reused for every image — figures, Main View, Iterations,
-  // Carousel, hero. The Compare slider is deliberately excluded: its
-  // draggable range input already owns clicks on that image, and a click
-  // there means "move the wipe," not "enlarge."
+  // Click an Iterations or Carousel image to see it enlarged against a
+  // dimmed backdrop. The hero and Main View images deliberately don't
+  // enlarge, and neither does the Compare slider: its draggable range
+  // input already owns clicks on that image, and a click there means
+  // "move the wipe," not "enlarge."
   function wireLightbox(root) {
     var box = el(
-      '<div class="lightbox" id="lightbox" hidden>' +
+      '<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged image" hidden>' +
         '<button class="lightbox-close" type="button" aria-label="Close">' +
           '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
         '</button>' +
@@ -821,13 +720,14 @@
       }
       var fig = src.closest('figure');
       if (fig) {
-        var c2 = fig.querySelector('figcaption, .iter-note');
+        var c2 = fig.querySelector('figcaption, .view-note');
         if (c2) return c2.innerHTML;
       }
       return esc(src.alt || '');
     }
 
     function open(src, opts) {
+      cancelHide();
       opener = (opts && opts.opener) || document.activeElement;
       img.src = src.currentSrc || src.src;
       img.alt = src.alt || '';
@@ -838,12 +738,21 @@
       closeBtn.focus();
     }
 
+    // Pending end-of-fade hide; open() cancels it so reopening mid-fade
+    // can't have the old close hide the new image.
+    var hide = null;
+    function cancelHide() {
+      if (hide) box.removeEventListener('transitionend', hide);
+      hide = null;
+    }
+
     function close() {
       box.classList.remove('is-open');
       document.documentElement.style.overflow = '';
-      var done = function () { box.hidden = true; img.src = ''; box.removeEventListener('transitionend', done); };
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
-      else box.addEventListener('transitionend', done);
+      cancelHide();
+      hide = function () { cancelHide(); box.hidden = true; img.src = ''; };
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) hide();
+      else box.addEventListener('transitionend', hide);
       if (opener && opener.focus) opener.focus();
     }
 
@@ -851,6 +760,7 @@
       var target = e.target.closest('img');
       if (!target || !root.contains(target)) return;
       if (target.closest('.compare-stage')) return; // owned by the drag slider
+      if (target.closest('.hero-figure, .hl-stage')) return; // hero + Main View don't enlarge
       if (target.classList.contains('sponsor-logo')) return; // sponsors never enlarge
       open(target, { opener: target.closest('button, a') || null });
     });
@@ -911,9 +821,7 @@
   /* ---- boot ---------------------------------------------- */
 
   function boot() {
-    if (!C || !C.team || !Array.isArray(C.sections) || !C.sections.length) {
-      return fail('content.js did not define window.BINDER_CONTENT with a non-empty "sections" list.');
-    }
+    if (!B.contentOk(C)) return;
 
     var t = C.team;
     greet(t);
@@ -921,10 +829,7 @@
     var root = document.documentElement;
     if (t.accent) root.style.setProperty('--accent', t.accent);
 
-    // Number sections in document order, like a printed binder.
-    var numbered = C.sections.map(function (s, i) {
-      var c = Object.create(s); c.n = i + 1; return c;
-    });
+    var numbered = B.numbered(C.sections);
 
     renderNav(numbered);
 
@@ -932,9 +837,6 @@
     main.innerHTML =
       renderHero(numbered) +
       numbered.map(renderSection).join('');
-
-    var sponsorsEl = document.getElementById('sponsors');
-    if (sponsorsEl) sponsorsEl.innerHTML = renderSponsors();
 
     document.getElementById('foot').innerHTML =
       '<span>Team ' + esc(t.number) + ' · ' + esc(t.name) + '</span>' +

@@ -24,7 +24,7 @@ window.BINDER_CONTENT = {
     name: "Koalafied",
     season: "2026",
     robot: "LEMON LAUNCHER",
-    tagline: "Full-width slap-down intake feeding a spindexer hopper, into a 360° turreted shooter. And an L1 climb.",
+    tagline: "Full-width linear intake feeding a spindexer hopper, into a 360° turreted shooter. And an L1 climb.",
     accent: "#0a7770",
     logo: "assets/img/logo.svg",
     website: "https://teamkoalafied.com",
@@ -33,7 +33,7 @@ window.BINDER_CONTENT = {
 
   hero: {
     image: "assets/img/hero-robot.webp",
-    alt: "Full robot assembly, isometric view (placeholder)",
+    alt: "Full robot assembly, isometric view",
     // Each callout can carry an optional `hl` (same camera as `image` above,
     // that one system left solid). When present, hovering (or focusing) the
     // callout's rail label crossfades the hero image to it — same mechanism
@@ -41,7 +41,7 @@ window.BINDER_CONTENT = {
     // callout is just a label, no highlight.
     callouts: [
       { id: "shooter",   side: "left",  x: 45, y: 26, blurb: "Two flywheel motors for recovery time, packaged inside the turret diameter.",
-        hl: { src: "assets/img/hero-hl-shooter.webp", alt: "Full robot with the shooter highlighted (placeholder)" } },
+        hl: { src: "assets/img/hero-hl-shooter.webp", alt: "Full robot with the shooter highlighted" } },
       { id: "intake",    side: "left",  x: 25, y: 51, blurb: "Full-width linear intake, over the bumper.",
         hl: { src: "assets/img/hero-hl-intake.webp", alt: "Full robot with the intake highlighted" } },
       { id: "spindexer", side: "left",  x: 55, y: 63, blurb: "2.67:1 rotating hopper at ~2200 RPM.",
@@ -76,8 +76,8 @@ window.BINDER_CONTENT = {
 
      // Main view. Give it 2+ views and pills appear to isolate
      // a sub-system; give it 1 view and it's just a plain image.
-     // No `alt` here on purpose — the note is shown as visible text right
-     // below the image, so a screen reader would just hear it twice.
+     // `note` only appears in the print version's captions.
+     // `alt` is optional — it defaults to the tag.
      { type: "highlight", views: [
          { tag: "Full Assembly", src: "…", note: "…" },
          { tag: "Gearbox",       src: "…", note: "…" }
@@ -101,12 +101,6 @@ window.BINDER_CONTENT = {
      { type: "compare", label: "…", caption: "…",
          before: { src: "…", alt: "…", tag: "Before" },
          after:  { src: "…", alt: "…", tag: "After" } }
-
-     // A plain grid of images — still available, just not used by any
-     // section right now (carousel replaced its two prior uses here).
-     { type: "figures", label: "…", cols: 2, items: [
-         { src: "…", alt: "…", caption: "…" }
-     ]}
 
      // Embedded YouTube video, responsive 16:9. `youtube` is just the
      // video ID (the part after "v=" or after "youtu.be/").
@@ -155,7 +149,7 @@ window.BINDER_CONTENT = {
       thesis: "A full-width, over-the-bumper linear intake.",
       features: [
         { text: "Linear Intake: hopper slides out with intake to expand space to store balls" },
-        { text: "Modular design: intake is replaceable seperate from gearboxes" },
+        { text: "Modular design: intake is replaceable separate from gearboxes" },
         { text: "Prior design used a 'slapdown' intake style. This enabled better positioning of the motor, but limited ball capacity and had less flexibility in collisions." },
       ],
       media: [
@@ -168,9 +162,9 @@ window.BINDER_CONTENT = {
             note: "The roller itself — the part that actually touches the ball." }
         ]},
         { type: "carousel", label: "Prototyping", items: [
-          { tag: "Prototyping", src: "assets/img/alt-linkage-design.png", caption: "Alternate linkage intake design we considered", caption: "Alt Linkage CAD"},
-          { tag: "Prototyping", src: "assets/img/intake-2025.jpg", alt: "2025 Intake", caption: "Intake we built in 2025 served as inspiration" },
-          { tag: "Prototyping", src: "assets/img/intake-prototype.png", alt: "Prototype intake on 2025 robot", caption: "Prototype intake attached to 2025 robot" }
+          { tag: "Prototyping", src: "assets/img/alt-linkage-design.webp", alt: "Alternate linkage intake design we considered", caption: "Alt Linkage CAD" },
+          { tag: "Prototyping", src: "assets/img/intake-2025.webp", alt: "2025 Intake", caption: "Intake we built in 2025 served as inspiration" },
+          { tag: "Prototyping", src: "assets/img/intake-prototype.webp", alt: "Prototype intake on 2025 robot", caption: "Prototype intake attached to 2025 robot" }
         ]}
       ]
     },
@@ -179,7 +173,7 @@ window.BINDER_CONTENT = {
       id: "spindexer",
       category: "mechanical",
       title: "Spindexer & Kicker",
-      thesis: "A rotating hopper that holds and singulates balls into the shooter",
+      thesis: "A rotating hopper that holds and singulates balls into the shooter.",
       features: [
         { text: "15t to 40t, running a **2.67 : 1** reduction" },
         { text: "Balls are moved into the kicker with a spinning platform. Allows balls to fall into the spindexer more easily" },
@@ -195,7 +189,7 @@ window.BINDER_CONTENT = {
             note: "Kicker motor, mounted to the frame above the hopper." }
         ]},
         { type: "carousel", label: "Prototyping", items: [
-          { tag: "Prototyping", src: "assets/img/spindexer-prototype.png", alt: "Early version of the spindexer with the kicker attached",
+          { tag: "Prototyping", src: "assets/img/spindexer-prototype.webp", alt: "Early version of the spindexer with the kicker attached",
             caption: "Early version of the spindexer with kicker attached" },
         ]}
       ]
@@ -220,8 +214,8 @@ window.BINDER_CONTENT = {
             note: "The hood's rack-and-pinion drive — sets launch angle independent of flywheel speed." }
         ]},
         { type: "carousel", label: "Prototyping", items: [
-          { tag: "Prototyping", src: "assets/img/shooter-prototype.png", alt: "Early shooter prototype", caption: "Shooter integration test with kicker and spindexer" },
-          { tag: "Prototyping", src: "assets/img/shooter-2023.png", alt: "Shooter from 2022 robot", caption: "Shooter from 2022 robot was inspiration" }
+          { tag: "Prototyping", src: "assets/img/shooter-prototype.webp", alt: "Early shooter prototype", caption: "Shooter integration test with kicker and spindexer" },
+          { tag: "Prototyping", src: "assets/img/shooter-2023.webp", alt: "Shooter from 2022 robot", caption: "Shooter from 2022 robot was inspiration" }
         ]}
       ]
     },
@@ -230,7 +224,7 @@ window.BINDER_CONTENT = {
       id: "turret",
       category: "mechanical",
       title: "Turret",
-      thesis: "Allows targeting of the hub while on the move, anywhere on the field",
+      thesis: "Allows targeting of the hub while on the move, anywhere on the field.",
       features: [
         { text: "Modular custom gearbox design with a 54:1 reduction" },
         { text: "COTS 'lazy susan' bearing with a 3DP rack attached to drive the rotation" },
@@ -271,7 +265,7 @@ window.BINDER_CONTENT = {
             note: "Single stage, packaged around the shooter and turret energy chain." },
         ]},
         { type: "carousel", label: "Prototyping", items: [
-          { tag: "Prototyping", src: "assets/img/climber-2020.png", alt: "2020 climbing mechanism", caption: "2020 single-stage climber was inspiration" }
+          { tag: "Prototyping", src: "assets/img/climber-2020.webp", alt: "2020 climbing mechanism", caption: "2020 single-stage climber was inspiration" }
         ]}
       ]
     }

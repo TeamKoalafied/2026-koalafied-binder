@@ -105,7 +105,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   text-transform: uppercase;
   color: var(--accent);
 }
-.muted { color: var(--ink-2); }
 code {
   font-family: var(--font-mono);
   font-size: 0.88em;
@@ -178,13 +177,9 @@ code {
 .icon-btn:hover { border-color: var(--rule); color: var(--ink); }
 .icon-btn svg { width: 15px; height: 15px; }
 
-/* Contents button: opens the full section list (menu-panel). Shown at every
-   width — on wide screens it sits alongside the category links, on narrow
-   ones it's the only way to jump to a section since nav-links hides. */
-
-/* External links (team website, CAD): styled like the Reveal/Mechanical
-   category links they sit next to, not like the icon buttons — the small
-   arrow is enough to show they leave the site, so no underline. */
+/* External CAD link: styled like the Reveal/Mechanical category links it
+   sits next to, not like the icon buttons — the small arrow is enough to
+   show it leaves the site, so no underline. */
 .nav-links a.nav-external {
   display: inline-flex; align-items: center; gap: 4px;
 }
@@ -238,13 +233,15 @@ code {
   gap: clamp(12px, 2.5vw, 40px);
   align-items: center;
 }
-.hero-figure { grid-column: 2; position: relative; aspect-ratio: var(--ar, 4 / 3); }
+/* Crossfade stack: every frame sits in the same grid cell, so the box is as
+   tall as the tallest frame and switching never shifts the page. The
+   section Main View and Iterations stages use the same trick. */
+.hero-figure { grid-column: 2; position: relative; display: grid; }
 .hero-frame {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: contain; opacity: 0; transition: opacity .28s ease;
-  pointer-events: none; /* only the visible frame below should catch clicks */
+  grid-area: 1 / 1; width: 100%; height: auto;
+  opacity: 0; transition: opacity .28s ease;
 }
-.hero-frame.is-on { opacity: 1; pointer-events: auto; cursor: zoom-in; }
+.hero-frame.is-on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .hero-frame { transition: none; } }
 
 .hero-lines {
@@ -285,11 +282,8 @@ code {
      labels, so it isn't reachable here; visitors just get the full robot. */
   .hero-stage { display: flex; flex-direction: column; }
   .hero-lines, .hero-dot, .hero-rail { display: none; }
-  /* Every .hero-frame is position:absolute (for the crossfade), so
-     .hero-figure has no in-flow content to size itself from — it needs an
-     explicit width here, since this flex column doesn't stretch its items
-     to fill the cross axis (.hero-stage sets align-items: center above).
-     Without this the figure collapses to 0×0 and the image vanishes. */
+  /* This flex column doesn't stretch its items (.hero-stage sets
+     align-items: center above), so give the figure the full width. */
   .hero-figure { width: 100%; }
 }
 
@@ -349,16 +343,10 @@ figcaption {
   margin-top: 10px; font-family: var(--font-mono); font-size: 11px;
   letter-spacing: .06em; color: var(--ink-3);
 }
-.frame {
-  background: none; border: none;
-  border-radius: 3px; overflow: hidden;
-}
-.frame img { width: 100%; cursor: zoom-in; transition: opacity .15s ease; }
-.frame img:hover { opacity: .88; }
 
 .video-frame {
   position: relative; width: 100%; aspect-ratio: 16 / 9;
-  border-radius: 3px; overflow: hidden; background: var(--ink-4, #111);
+  border-radius: 3px; overflow: hidden; background: #111;
 }
 .video-frame iframe {
   position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
@@ -456,14 +444,10 @@ figcaption {
 /* ---- 8. Iteration scrubber ------------------------------- */
 
 .iters-stage {
-  position: relative; background: none;
-  border: none; border-radius: 3px; overflow: hidden;
+  position: relative; display: grid;
+  border-radius: 3px; overflow: hidden;
 }
-.iters-stage { aspect-ratio: var(--ar, 4 / 3); }
-.iters-stage img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%; object-fit: contain; padding: 3%;
-}
+.iters-stage img { grid-area: 1 / 1; width: 100%; height: auto; padding: 3%; }
 .iter-frame { opacity: 0; transition: opacity .18s ease; pointer-events: none; }
 .iter-frame.is-on { opacity: 1; pointer-events: auto; cursor: zoom-in; }
 .iter-frame.is-on:hover { opacity: .92; }
@@ -502,43 +486,28 @@ figcaption {
   box-shadow: 0 0 0 1px var(--accent-2);
 }
 
-.iter-note {
+/* Per-version note under an Iterations slider. */
+.view-note {
   margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule-2);
   display: flex; gap: 12px; align-items: baseline;
   font-size: 14.5px; color: var(--ink-2); min-height: 3.2em;
 }
-.iter-note b {
+.view-note b {
   font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em;
   color: var(--accent-3); flex: none; text-transform: uppercase;
 }
 
-/* ---- 8b. Figure grids ------------------------------------ */
-
-.figs { display: grid; gap: clamp(12px, 1.8vw, 20px); }
-.figs-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.figs-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.figs .wide { grid-column: 1 / -1; }
-@media (max-width: 720px) { .figs-2, .figs-3 { grid-template-columns: 1fr; } }
-
-.figs figure { display: flex; flex-direction: column; }
-.figs .frame { flex: 1; display: grid; place-items: center; padding: 10px; }
-.figs .frame img { width: 100%; height: auto; }
-
 /* ---- 8c. Highlight views ---------------------------------- */
 
 .hl-stage {
-  position: relative; overflow: hidden;
-  background: none; border: none; border-radius: 3px;
-  aspect-ratio: var(--ar, 4 / 3);
+  position: relative; display: grid;
+  overflow: hidden; border-radius: 3px;
 }
 .hl-stage img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%; object-fit: contain; padding: 3%;
+  grid-area: 1 / 1; width: 100%; height: auto; padding: 3%;
   opacity: 0; transition: opacity .28s ease;
-  pointer-events: none; /* only the visible frame below should catch clicks */
 }
-.hl-stage img.is-on { opacity: 1; pointer-events: auto; cursor: zoom-in; }
-.hl-stage img.is-on:hover { opacity: .92; }
+.hl-stage img.is-on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .hl-stage img { transition: none; } }
 
 /* The views sit on one connected rail rather than as separate buttons:
@@ -684,25 +653,6 @@ figcaption {
 .carousel-next { right: -14px; }
 @media (max-width: 640px) { .carousel-prev { left: 4px; } .carousel-next { right: 4px; } }
 
-/* ---- 9. Card grid (software tools etc.) ------------------ */
-
-.cards {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: clamp(16px, 2.4vw, 28px);
-}
-.card {
-  background: var(--panel); border: 1px solid var(--rule);
-  border-radius: 3px; overflow: hidden; text-decoration: none;
-  display: flex; flex-direction: column;
-  transition: border-color .15s, transform .15s;
-}
-a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
-.card img { width: 100%; background: var(--panel); border-bottom: 1px solid var(--rule); }
-.card-body { padding: 15px 16px 18px; }
-.card h4 { font-size: 17px; font-weight: 600; }
-.card p { margin-top: 6px; font-size: 13.5px; color: var(--ink-3); line-height: 1.5; }
-.card-go { margin-top: 10px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
-
 /* ---- 9b. Lightbox ------------------------------------------ */
 
 /* One overlay, reused for every clickable image on the page (see
@@ -758,34 +708,24 @@ a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
 }
 .lightbox-close:hover { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .4); }
 
-/* ---- 9b. Sponsors ------------------------------------------ */
+/* ---- 9c. Sponsors ------------------------------------------ */
 
-/* Two sponsor moments, matching the main site's quiet banner: one right
-   under the hero (no label), one near the footer (labelled). Same row
-   layout and logo size in both places — the binder doesn't need the main
-   site's bigger, tiered "Our Sponsors" section. */
+/* One quiet strip under the hero, matching the main site's banner — the
+   binder doesn't need the main site's bigger, tiered "Our Sponsors" section. */
 
-.sponsors {
-  border-top: 1px solid var(--rule);
-  padding: 48px 0 32px;
-  text-align: center;
-}
+.sponsors { padding: 32px 0 0; margin-top: 8px; text-align: center; }
 .sponsors-label {
   font-family: var(--font-mono); font-size: 11px;
   letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
   margin-bottom: 28px;
 }
-.sponsor-banner-row {
+.sponsor-row {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
   gap: 18px 34px;
 }
 .sponsor-logo {
   height: 26px; max-width: 104px;
   width: auto; object-fit: contain;
-}
-
-.sponsors-hero {
-  border-top: none; padding: 32px 0 0; margin-top: 8px;
 }
 
 /* ---- 10. Footer ------------------------------------------ */
@@ -836,5 +776,5 @@ a.card:hover { border-color: var(--accent); transform: translateY(-2px); }
   .hero { padding: 0 0 18pt; }
   .hero-title { font-size: 42pt; }
   a { text-decoration: none; }
-  .iter-frame { opacity: 1 !important; position: static !important; }
+  .iter-frame { opacity: 1 !important; grid-area: auto !important; }
 }
